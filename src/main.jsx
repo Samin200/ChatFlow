@@ -11,8 +11,8 @@ const migrate = (oldKey, newKey) => {
     localStorage.setItem(newKey, oldVal);
   }
 };
-['chatflow_token', 'kothaboli_token', 'auth_token', 'token'].forEach(k => migrate(k, 'novalink_token'));
-['chatflow_user', 'kothaboli_user', 'auth_user', 'user'].forEach(k => migrate(k, 'novalink_user'));
+['chatflow_token', 'kothaboli_token', 'auth_token', 'token'].forEach(k => migrate(k, 'nChatFlow_token'));
+['chatflow_user', 'kothaboli_user', 'auth_user', 'user'].forEach(k => migrate(k, 'nChatFlow_user'));
 
 // Apply stored app theme before React mounts to avoid first-paint flicker.
 initializeAppTheme();

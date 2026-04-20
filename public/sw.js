@@ -1,5 +1,5 @@
 /*
- * NovaLink Service Worker
+ * ChatFlow Service Worker
  * Handles background push notifications.
  */
 
@@ -22,7 +22,7 @@ self.addEventListener("push", (event) => {
     };
 
     event.waitUntil(
-      self.registration.showNotification(data.title || "NovaLink", options)
+      self.registration.showNotification(data.title || "ChatFlow", options)
     );
   } catch (err) {
     console.error("Error receiving push notification", err);

@@ -33,7 +33,7 @@ export default function ChatHeader({
           <ChatFlowIcon className="h-10 w-10 rounded-full" />
           <div>
             <h1 className="font-bold text-lg leading-tight" style={{ color: textColor }}>
-              NovaLink
+              ChatFlow
             </h1>
             <p className="text-xs" style={{ color: mutedColor }}>Select a conversation</p>
           </div>

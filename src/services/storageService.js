@@ -5,8 +5,8 @@
  */
 
 const KEYS = {
-  AUTH_USER: "novalink_user",
-  AUTH_TOKEN: "novalink_token",
+  AUTH_USER: "nChatFlow_user",
+  AUTH_TOKEN: "nChatFlow_token",
   CHAT_USERS: "chat_users",
   CHAT_MESSAGES: "chat_messages",
   CHAT_SETTINGS: "chat_settings",
@@ -14,10 +14,10 @@ const KEYS = {
   PROFILE_PICTURE: "profilePicture",
   ACTIVE_CHAT_ID: "active_chat_id",
   // Unified Theme Keys
-  CHAT_BG_TYPE: "novalink_chat_bg_type",
-  CHAT_BG_VALUE: "novalink_chat_bg_value",
-  BUBBLE_MINE: "novalink_bubble_mine",
-  BUBBLE_THEIR: "novalink_bubble_their",
+  CHAT_BG_TYPE: "nChatFlow_chat_bg_type",
+  CHAT_BG_VALUE: "nChatFlow_chat_bg_value",
+  BUBBLE_MINE: "nChatFlow_bubble_mine",
+  BUBBLE_THEIR: "nChatFlow_bubble_their",
 };
 
 const DEFAULT_CHAT_SETTINGS = {
@@ -31,7 +31,7 @@ let storageAvailable = true;
 
 function checkStorage() {
   try {
-    const testKey = "__novalink_test__";
+    const testKey = "__nChatFlow_test__";
     localStorage.setItem(testKey, "1");
     localStorage.removeItem(testKey);
     storageAvailable = true;

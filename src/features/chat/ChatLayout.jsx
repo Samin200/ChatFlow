@@ -333,7 +333,7 @@ function EmptyState() {
         <div className="flex items-center gap-3">
           <ChatFlowIcon className="h-10 w-10 rounded-full" />
           <div>
-            <h1 className="font-bold" style={{ color: "var(--color-text)" }}>NovaLink</h1>
+            <h1 className="font-bold" style={{ color: "var(--color-text)" }}>ChatFlow</h1>
             <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>Your messages await</p>
           </div>
         </div>
@@ -348,7 +348,7 @@ function EmptyState() {
 
         <div>
           <h2 className="text-xl font-bold mb-2" style={{ color: "var(--color-text)" }}>
-            Welcome to NovaLink
+            Welcome to ChatFlow
           </h2>
           <p className="text-sm leading-relaxed max-w-xs" style={{ color: "var(--color-text-muted)" }}>
             Select a conversation from the sidebar to start chatting. Your messages are private and stored locally.

@@ -111,7 +111,7 @@ export default function OnboardingFlow({ pendingUser, onComplete }) {
         <div className="flex flex-col gap-6 w-full">
           <div className="text-center">
             <h2 className="text-xl font-bold mb-1" style={{ color: "var(--color-text)" }}>What's your name?</h2>
-            <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>This is how others will see you in NovaLink</p>
+            <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>This is how others will see you in ChatFlow</p>
           </div>
 
           <div className="flex justify-center">

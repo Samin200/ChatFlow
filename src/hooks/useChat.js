@@ -762,7 +762,7 @@ export function useChat(currentUser, chatIdFromRoute) {
   }, [pushToast]);
 
   const handleInviteByLink = useCallback(async () => {
-    const inviteLink = `https://novalink.app/invite/${currentUser?.id ?? "guest"}`;
+    const inviteLink = `https://ChatFlow.app/invite/${currentUser?.id ?? "guest"}`;
     try {
       await navigator.clipboard.writeText(inviteLink);
       pushToast({

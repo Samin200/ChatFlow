@@ -6,7 +6,7 @@ export default function ChatFlowIcon({ className = "h-10 w-10" }) {
     >
       <img
         src="/chatflow-icon.png"
-        alt="NovaLink"
+        alt="ChatFlow"
         className="h-full w-full object-cover chatflow-brand-icon"
         draggable={false}
         loading="eager"

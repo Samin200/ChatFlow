@@ -903,6 +903,6 @@ export async function exportConversation(userId, contactId) {
   return {
     success: true,
     content,
-    fileName: `novalink-export-${contactId}-${Date.now()}.json`,
+    fileName: `ChatFlow-export-${contactId}-${Date.now()}.json`,
   };
 }

@@ -559,7 +559,7 @@ function APIKeysView({ c }) {
 }
 
 function SettingsView({ c }) {
-  const [form,setForm]=useState({name:"NovaLink",url:"",upload:"10MB"});
+  const [form,setForm]=useState({name:"ChatFlow",url:"",upload:"10MB"});
   const [saved,setSaved]=useState(false);
   const set=k=>e=>setForm(f=>({...f,[k]:e.target.value}));
   const save=()=>{setSaved(true);setTimeout(()=>setSaved(false),3000);};
@@ -696,7 +696,7 @@ export default function AdminPage({ currentUser, onLogout, onClose, onOpenChat }
   },[users,chats,requests]);
 
   const activityFeed=useMemo(()=>[
-    ...users.slice(0,3).map(u=>({id:`u-${u.id??u._id}`,type:"join",text:`${u.displayName??u.username} joined NovaLink`,at:"just now"})),
+    ...users.slice(0,3).map(u=>({id:`u-${u.id??u._id}`,type:"join",text:`${u.displayName??u.username} joined ChatFlow`,at:"just now"})),
     ...chats.slice(0,2).map(ch=>({id:`c-${ch.id??ch._id}`,type:"message",text:`New activity in ${ch.name||"Direct chat"}`,at:"2m ago"})),
     ...requests.slice(0,2).map(r=>({id:`r-${r.id??r._id}`,type:"warning",text:`Forgot password from @${r.username}`,at:"5m ago"})),
   ].slice(0,8),[users,chats,requests]);
@@ -775,7 +775,7 @@ export default function AdminPage({ currentUser, onLogout, onClose, onOpenChat }
             <div className="flex items-center gap-3">
               <button className="lg:hidden h-8 w-8 rounded-lg flex items-center justify-center border admin-card-btn" style={{ background:c.bgSubtle, borderColor:c.border }} onClick={()=>setSidebarOpen(!sidebarOpen)}><Menu className="h-4 w-4" style={{ color:c.textMuted }}/></button>
               <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ background:c.bgSubtle, border:`1px solid ${c.border}` }}><ChatFlowIcon className="h-6 w-6"/></div>
-              <span className="text-base font-semibold">NovaLink</span>
+              <span className="text-base font-semibold">ChatFlow</span>
               <span className="hidden sm:block text-xs px-2 py-0.5 rounded-full font-medium" style={{ background:`color-mix(in srgb,${c.accent} 15%,transparent)`, color:c.accent }}>Admin</span>
             </div>
             <div className="hidden md:flex items-center gap-2">

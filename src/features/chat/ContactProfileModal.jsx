@@ -50,7 +50,7 @@ export default function ContactProfileModal({ contact, open, onClose }) {
           }}
         >
           <InfoRow label="Status" value={contact.online ? "online" : formatLastSeen(contact.lastSeen)} />
-          <InfoRow label="About" value={contact.about || "Hey there! I am using NovaLink."} />
+          <InfoRow label="About" value={contact.about || "Hey there! I am using ChatFlow."} />
           <InfoRow label="Type" value={contact.isGroup ? "Group" : "Private chat"} />
         </div>
       </div>
