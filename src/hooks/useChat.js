@@ -140,11 +140,29 @@ export function useChat(currentUser, chatIdFromRoute) {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   }, []);
 
+  // Track pending refresh to prevent duplicate concurrent calls
+  const refreshPendingRef = useRef(false);
+  
   const refreshContacts = useCallback(async () => {
-    if (!currentUser) return;
-    const raw = await getContacts(currentUser.id);
-    setContacts(raw);
+    if (!currentUser || refreshPendingRef.current) return;
+    refreshPendingRef.current = true;
+    try {
+      const raw = await getContacts(currentUser.id);
+      setContacts(raw);
+    } finally {
+      refreshPendingRef.current = false;
+    }
   }, [currentUser]);
+
+  // Throttled version for high-frequency socket events (max once per 2 seconds)
+  const throttledRefreshRef = useRef(null);
+  const throttledRefreshContacts = useCallback(() => {
+    if (throttledRefreshRef.current) return;
+    throttledRefreshRef.current = setTimeout(() => {
+      throttledRefreshRef.current = null;
+    }, 2000);
+    refreshContacts();
+  }, [refreshContacts]);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -198,7 +216,7 @@ export function useChat(currentUser, chatIdFromRoute) {
           }
         }
 
-        refreshContacts();
+        throttledRefreshContacts();
       }),
       subscribeSocketEvent("message:update", (rawUpdatedMessage) => {
         const updatedMessage = normalizeMessagePayload(rawUpdatedMessage);
@@ -206,13 +224,13 @@ export function useChat(currentUser, chatIdFromRoute) {
         setMessages((prev) =>
           prev.map((msg) => (msg.id === updatedMessage.id ? { ...msg, ...updatedMessage } : msg))
         );
-        refreshContacts();
+        throttledRefreshContacts();
       }),
       subscribeSocketEvent("message:delete", (payload) => {
         const messageId = payload?.id ?? payload?.messageId;
         if (!messageId) return;
         setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
-        refreshContacts();
+        throttledRefreshContacts();
       }),
       subscribeSocketEvent("reaction:update", (rawUpdatedMessage) => {
         const updatedMessage = normalizeMessagePayload(rawUpdatedMessage);
@@ -230,10 +248,10 @@ export function useChat(currentUser, chatIdFromRoute) {
         if (chatId) setTypingState(chatId, false);
       }),
       subscribeSocketEvent("user:online", () => {
-        refreshContacts();
+        throttledRefreshContacts();
       }),
       subscribeSocketEvent("user:offline", () => {
-        refreshContacts();
+        throttledRefreshContacts();
       }),
       subscribeSocketEvent("message:status", (payload) => {
         const { messageId, status, chatId } = payload?.data || {};
@@ -254,7 +272,7 @@ export function useChat(currentUser, chatIdFromRoute) {
               : msg
           );
         });
-        refreshContacts();
+        throttledRefreshContacts();
       }),
       subscribeSocketEvent("chat:created", (payload) => {
         const chat = payload?.chat || payload?.data?.chat;
@@ -267,14 +285,15 @@ export function useChat(currentUser, chatIdFromRoute) {
     return () => {
       unsubs.forEach((unsub) => unsub());
     };
-  }, [currentUser, soundEnabled, pushToast, refreshContacts, setTypingState]);
+  }, [currentUser, soundEnabled, pushToast, refreshContacts, throttledRefreshContacts, setTypingState]);
 
   useEffect(() => {
     if (!currentUser) return;
+    // Reduced from 8s to 30s to optimize performance
     const interval = setInterval(() => {
       simulatePresenceTick();
       refreshContacts();
-    }, 8000);
+    }, 30000);
     return () => clearInterval(interval);
   }, [currentUser, refreshContacts]);
 

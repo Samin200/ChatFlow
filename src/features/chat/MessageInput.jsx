@@ -11,6 +11,7 @@ import {
   Type,
   PenLine, RotateCcw,
   X,
+  Loader2,
 } from "lucide-react";
 import {
   validateImageFile,
@@ -45,6 +46,7 @@ export default function MessageInput({
   const [pickerSearch, setPickerSearch] = useState("");
   const [imageError, setImageError] = useState(null);
   const [pendingImage, setPendingImage] = useState(null);
+  const [isSending, setIsSending] = useState(false);
 
   const previewCanvasRef = useRef(null);
   const [originalPreviewDataUrl, setOriginalPreviewDataUrl] = useState(null);
@@ -65,7 +67,7 @@ export default function MessageInput({
   const [mentionQuery, setMentionQuery] = useState("");
   const [mentionSelectionIdx, setMentionSelectionIdx] = useState(0);
 
-  const canSend = (text.trim().length > 0 || pendingImage) && !disabled;
+  const canSend = (text.trim().length > 0 || pendingImage) && !disabled && !isSending;
 
   const getThemeCssColor = useCallback((token, fallback) => {
     if (typeof window === "undefined") return fallback;
@@ -130,7 +132,7 @@ export default function MessageInput({
     return [...new Set(userIds)];
   }
 
-  const handleSend = useCallback(() => {
+  const handleSend = useCallback(async () => {
     if (!canSend) return;
 
     if (typingTimerRef.current) {
@@ -139,30 +141,40 @@ export default function MessageInput({
     }
     onTypingStop?.();
 
-    if (pendingImage) {
-      onSend({
-        text: text.trim(),
-        type: "image",
-        imageData: previewSource || pendingImage.dataUrl,
-        imageFile: pendingImage.file, // Pass the binary file
-        mentions: extractMentions(text),
-      });
-      setPendingImage(null);
-      setOriginalPreviewDataUrl(null);
-      setEditedDataUrl(null);
-    } else {
-      onSend({ text: text.trim(), type: "text", imageData: null, mentions: extractMentions(text) });
-    }
+    setIsSending(true);
+    try {
+      if (pendingImage) {
+        await onSend({
+          text: text.trim(),
+          type: "image",
+          imageData: previewSource || pendingImage.dataUrl,
+          imageFile: pendingImage.file,
+          mentions: extractMentions(text),
+        });
+        setPendingImage(null);
+        setOriginalPreviewDataUrl(null);
+        setEditedDataUrl(null);
+      } else {
+        await onSend({ text: text.trim(), type: "text", imageData: null, mentions: extractMentions(text) });
+      }
 
-    setText("");
-    setShowEmoji(false);
-    textareaRef.current?.focus();
+      setText("");
+      setShowEmoji(false);
+      textareaRef.current?.focus();
+    } finally {
+      setIsSending(false);
+    }
   }, [canSend, text, pendingImage, onSend, previewSource, onTypingStop]);
 
   // Voice recording complete handler — passes actual blob up
   const handleVoiceComplete = useCallback(
-    ({ blob, duration }) => {
-      onSend({ type: "voice", text: "", duration, imageData: null, voiceBlob: blob });
+    async ({ blob, duration }) => {
+      setIsSending(true);
+      try {
+        await onSend({ type: "voice", text: "", duration, imageData: null, voiceBlob: blob });
+      } finally {
+        setIsSending(false);
+      }
     },
     [onSend]
   );
@@ -556,7 +568,7 @@ export default function MessageInput({
         </div>
 
         {!hasText && !pendingImage ? (
-          <VoiceRecorder disabled={disabled} onRecordingComplete={handleVoiceComplete} />
+          <VoiceRecorder disabled={disabled || isSending} onRecordingComplete={handleVoiceComplete} />
         ) : (
           <button
             type="button"
@@ -570,7 +582,11 @@ export default function MessageInput({
             }}
             aria-label="Send message"
           >
-            <SendHorizontal className="w-6 h-6" />
+            {isSending ? (
+              <Loader2 className="w-6 h-6 animate-spin" />
+            ) : (
+              <SendHorizontal className="w-6 h-6" />
+            )}
           </button>
         )}
       </div>
@@ -667,10 +683,15 @@ export default function MessageInput({
             <button
               type="button"
               onClick={handleSend}
-              className="h-12 w-12 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30 hover:bg-emerald-400 transition-colors"
+              disabled={isSending}
+              className="h-12 w-12 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30 hover:bg-emerald-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Send selected image"
             >
-              <SendHorizontal className="w-5 h-5" />
+              {isSending ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <SendHorizontal className="w-5 h-5" />
+              )}
             </button>
           </div>
         </div>,

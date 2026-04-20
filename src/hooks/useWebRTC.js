@@ -28,6 +28,17 @@ export function useWebRTC(currentUser, onCallEndedCallback) {
   const pcRef = useRef(null);
   const callDurationTimer = useRef(null);
   const callStartTime = useRef(null);
+  
+  // Use refs to avoid stale closures in socket listeners
+  const callStateRef = useRef(callState);
+  const activeCallRef = useRef(activeCall);
+  const incomingCallRef = useRef(incomingCall);
+  const onCallEndedCallbackRef = useRef(onCallEndedCallback);
+  
+  useEffect(() => { callStateRef.current = callState; }, [callState]);
+  useEffect(() => { activeCallRef.current = activeCall; }, [activeCall]);
+  useEffect(() => { incomingCallRef.current = incomingCall; }, [incomingCall]);
+  useEffect(() => { onCallEndedCallbackRef.current = onCallEndedCallback; }, [onCallEndedCallback]);
 
   const cleanup = useCallback(() => {
     if (localStream) {
@@ -146,34 +157,43 @@ export function useWebRTC(currentUser, onCallEndedCallback) {
   }, [incomingCall, initPeerConnection, cleanup]);
 
   const rejectCall = useCallback(() => {
-    if (incomingCall) {
+    const currentIncoming = incomingCallRef.current;
+    if (currentIncoming) {
       emitSocketEvent("call:rejected", {
-        callId: incomingCall.callId,
-        targetId: incomingCall.callerId,
+        callId: currentIncoming.callId,
+        targetId: currentIncoming.callerId,
       });
       setIncomingCall(null);
       setCallState("idle");
     }
-  }, [incomingCall]);
+  }, []);
 
   const endCall = useCallback(() => {
-    if (activeCall) {
+    const currentActive = activeCallRef.current;
+    const currentIncoming = incomingCallRef.current;
+    
+    if (currentActive) {
       emitSocketEvent("call:ended", {
-        callId: activeCall.callId,
-        targetId: activeCall.targetId,
-        chatId: activeCall.chatId,
+        callId: currentActive.callId,
+        targetId: currentActive.targetId,
+        chatId: currentActive.chatId,
       });
       
-      if (callStartTime.current && onCallEndedCallback) {
+      if (callStartTime.current && onCallEndedCallbackRef.current) {
         const durationSec = Math.floor((Date.now() - callStartTime.current) / 1000);
-        onCallEndedCallback(activeCall.chatId, durationSec, activeCall.isVideo);
+        onCallEndedCallbackRef.current(currentActive.chatId, durationSec, currentActive.isVideo);
       }
-    } else if (incomingCall) {
-      rejectCall();
+    } else if (currentIncoming) {
+      emitSocketEvent("call:rejected", {
+        callId: currentIncoming.callId,
+        targetId: currentIncoming.callerId,
+      });
+      setIncomingCall(null);
+      setCallState("idle");
     }
     
     cleanup();
-  }, [activeCall, incomingCall, rejectCall, cleanup, onCallEndedCallback]);
+  }, [cleanup]);
 
   const toggleMic = useCallback(() => {
     if (localStream) {
@@ -192,8 +212,8 @@ export function useWebRTC(currentUser, onCallEndedCallback) {
     if (!currentUser?.id) return;
 
     const handleInvite = (data) => {
-      // data: { callId, callerId, chatId, offer, isVideo }
-      if (callState !== "idle") {
+      // Use ref to get latest state
+      if (callStateRef.current !== "idle") {
         // Busy
         emitSocketEvent("call:rejected", { callId: data.callId, targetId: data.callerId, reason: "busy" });
         return;
@@ -204,9 +224,13 @@ export function useWebRTC(currentUser, onCallEndedCallback) {
 
     const handleAccepted = async (data) => {
       if (pcRef.current && data.answer) {
-        await pcRef.current.setRemoteDescription(new RTCSessionDescription(data.answer));
-        setCallState("connected");
-        callStartTime.current = Date.now();
+        try {
+          await pcRef.current.setRemoteDescription(new RTCSessionDescription(data.answer));
+          setCallState("connected");
+          callStartTime.current = Date.now();
+        } catch (err) {
+          console.error("Error setting remote description:", err);
+        }
       }
     };
 
@@ -241,7 +265,7 @@ export function useWebRTC(currentUser, onCallEndedCallback) {
       unsubIce();
       unsubEnded();
     };
-  }, [currentUser?.id, callState, cleanup]);
+  }, [currentUser?.id, cleanup]);
 
   return {
     callState,
