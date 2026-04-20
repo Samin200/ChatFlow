@@ -62,7 +62,13 @@ export function useWebRTC(currentUser, onCallEndedCallback) {
   const initPeerConnection = useCallback((targetId) => {
     if (pcRef.current) pcRef.current.close();
     
-    const pc = new RTCPeerConnection({ ...ICE_SERVERS, bundlePolicy: "max-bundle" });
+    const pc = new RTCPeerConnection({
+      iceServers: [
+        {
+          urls: "stun:stun.l.google.com:19302"
+        }
+      ]
+    });
     pcRef.current = pc;
 
     pc.onicecandidate = (event) => {
