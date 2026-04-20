@@ -6,6 +6,8 @@ import ChatMenu from "./ChatMenu.jsx";
 import NewGroupModal from "./NewGroupModal.jsx";
 import ChatFlowIcon from "../../components/ChatFlowIcon.jsx";
 import { getAuthToken } from "../../services/storageService.js";
+import api from "../../services/api.js";
+import Swal from "sweetalert2";
 
 export default function ChatSidebar({
   currentUser,
@@ -277,25 +279,15 @@ function FindUserModal({ open, onClose, onSelectUser }) {
       return;
     }
 
-    const base = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
     const controller = new AbortController();
     const timer = setTimeout(async () => {
       try {
         setIsLoading(true);
-        const token = getAuthToken();
-        const requestUrl = `${base}/api/users/search?q=${encodeURIComponent(normalized)}`;
-
-        const response = await fetch(requestUrl, {
+        const res = await api.get(`/api/users/search?q=${encodeURIComponent(normalized)}`, {
           signal: controller.signal,
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
 
-        if (!response.ok) {
-          setResults([]);
-          return;
-        }
-
-        const payload = await response.json();
+        const payload = res.data;
         const rawUsers = Array.isArray(payload?.users)
           ? payload.users
           : Array.isArray(payload?.data?.users)
@@ -317,8 +309,9 @@ function FindUserModal({ open, onClose, onSelectUser }) {
 
         setResults(normalizedUsers.slice(0, 12));
       } catch (error) {
-        if (error?.name !== "AbortError") {
+        if (error?.name !== "AbortError" && error?.code !== "ERR_CANCELED") {
           setResults([]);
+          Swal.fire({ icon: "error", title: "Search failed", text: error.message });
         }
       } finally {
         setIsLoading(false);
