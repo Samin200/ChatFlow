@@ -277,7 +277,7 @@ button:active {
 }
 
 :root[data-theme="light"] .chatflow-brand-icon {
-  filter: brightness(0) invert(1) drop-shadow(0 0 8px color-mix(in srgb, var(--color-accent) 45%, transparent));
+  filter: brightness(0) saturate(100%) invert(39%) sepia(98%) saturate(2000%) hue-rotate(202deg) drop-shadow(0 0 8px color-mix(in srgb, var(--color-primary) 45%, transparent));
 }
 
 :root[data-theme="light"] .chatflow-icon-shell {

@@ -225,10 +225,12 @@ export default function AppThemeModal({ open, onClose, onThemeApplied }) {
           <h3 className="text-xl font-semibold" style={{ color: "var(--color-text)" }}>Design System Board</h3>
           <button
             onClick={handleCancel}
-            className="rounded-lg px-3 py-1.5"
-            style={{ color: "var(--color-text-muted)" }}
+            className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-105"
+            style={{ backgroundColor: "color-mix(in srgb, var(--color-text) 10%, transparent)" }}
           >
-            Cancel
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: "var(--color-text)" }}>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
 
@@ -314,14 +316,25 @@ export default function AppThemeModal({ open, onClose, onThemeApplied }) {
 
         {/* Save Changes Button - Bottom Right */}
         {!isCustomEditorOpen && (
-          <div className="px-5 py-4 border-t flex justify-end" style={{ borderColor: "color-mix(in srgb, var(--color-text) 14%, transparent)" }}>
+          <div className="px-5 py-4 border-t flex justify-between items-center" style={{ borderColor: "color-mix(in srgb, var(--color-text) 14%, transparent)" }}>
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-105 active:scale-95"
+              style={{
+                color: "var(--color-text)",
+                backgroundColor: "color-mix(in srgb, var(--color-surface) 90%, transparent)",
+              }}
+            >
+              Cancel
+            </button>
             <button
               type="button"
               onClick={handleSaveChanges}
               disabled={!hasChanges || isSaving}
               className="px-6 py-2.5 rounded-xl text-sm font-semibold transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               style={{
-                color: "var(--color-background)",
+                color: "white",
                 backgroundColor: hasChanges ? "var(--color-accent)" : "color-mix(in srgb, var(--color-text) 30%, transparent)",
                 boxShadow: hasChanges ? "0 4px 14px color-mix(in srgb, var(--color-accent) 50%, transparent)" : "none",
               }}
