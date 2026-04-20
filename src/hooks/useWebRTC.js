@@ -75,6 +75,10 @@ export function useWebRTC(currentUser, onCallEndedCallback) {
       }
     };
 
+    pc.oniceconnectionstatechange = () => {
+      console.log('[CALL] ICE state:', pc.iceConnectionState);
+    };
+
     pc.ontrack = (event) => {
       console.log('[CALL] ontrack received, stream:', event.streams[0]?.id, 'tracks:', event.streams[0]?.getTracks().map(t => t.kind));
       setRemoteStream(event.streams[0]);

@@ -20,6 +20,9 @@ export default function CallOverlay({
   const [isMicMuted, setIsMicMuted] = useState(false);
   const [isCamOff, setIsCamOff] = useState(false);
 
+  // Determine if this is a video call (needed for stream attachment logic)
+  const isVideo = activeCall?.isVideo || (localStream?.getVideoTracks().length > 0);
+
   useEffect(() => {
     console.log('[CALL] localStream effect - hasStream:', !!localStream, 'hasRef:', !!localVideoRef.current);
     if (localVideoRef.current && localStream) {
@@ -28,18 +31,29 @@ export default function CallOverlay({
   }, [localStream, callState]);
 
   useEffect(() => {
-    console.log('[CALL] remoteStream effect - hasStream:', !!remoteStream, 'videoRef:', !!remoteVideoRef.current, 'audioRef:', !!remoteAudioRef.current);
+    console.log('[CALL] remoteStream effect - hasStream:', !!remoteStream, 'isVideo:', isVideo, 'videoRef:', !!remoteVideoRef.current, 'audioRef:', !!remoteAudioRef.current);
+    
+    if (!remoteStream) return;
+
     // For video calls, attach to video element
-    if (remoteVideoRef.current && remoteStream) {
+    if (isVideo && remoteVideoRef.current) {
       remoteVideoRef.current.srcObject = remoteStream;
-      console.log('[CALL] remoteStream attached to video element');
+      console.log('[CALL] remoteStream attached to video element, calling play()');
+      remoteVideoRef.current.play().catch(err => {
+        console.error('[CALL] Video play failed:', err);
+      });
     }
+    
     // For voice calls, attach to audio element
-    if (remoteAudioRef.current && remoteStream) {
+    if (!isVideo && remoteAudioRef.current) {
       remoteAudioRef.current.srcObject = remoteStream;
-      console.log('[CALL] remoteStream attached to audio element');
+      remoteAudioRef.current.muted = false;
+      console.log('[CALL] remoteStream attached to audio element, calling play()');
+      remoteAudioRef.current.play().catch(err => {
+        console.error('[CALL] Audio play failed:', err);
+      });
     }
-  }, [remoteStream, callState]);
+  }, [remoteStream, callState, isVideo]);
 
   // --- Web Audio Ringtone Logic ---
   const audioCtxRef = useRef(null);
@@ -163,8 +177,6 @@ export default function CallOverlay({
   }
 
   // Active Call Overlay Frame
-  const isVideo = activeCall?.isVideo || (localStream?.getVideoTracks().length > 0);
-
   return (
     <div className="fixed inset-0 z-[150] flex flex-col bg-slate-950/90 backdrop-blur-sm animate-in fade-in">
       <div className="flex-1 relative flex items-center justify-center p-6">
