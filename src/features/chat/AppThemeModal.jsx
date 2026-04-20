@@ -42,11 +42,9 @@ export default function AppThemeModal({ open, onClose, onThemeApplied }) {
 
   const customTheme = useMemo(() => findTheme(themes, CUSTOM_THEME_NAME), [themes]);
 
-  useEffect(() => {
-    if (!isCustomEditorOpen || !customDraft) return;
-    applyTheme(customDraft);
-    onThemeApplied?.(customDraft);
-  }, [isCustomEditorOpen, customDraft, onThemeApplied]);
+  // NOTE: We no longer apply theme immediately on draft changes
+  // Theme is only applied when user clicks "Save Theme"
+  // This allows testing colors before committing
 
   const handleSelectTheme = (name) => {
     const selectedTheme = findTheme(themes, name);
@@ -108,6 +106,7 @@ export default function AppThemeModal({ open, onClose, onThemeApplied }) {
     setActiveThemeName(CUSTOM_THEME_NAME);
     saveActiveThemeName(CUSTOM_THEME_NAME);
     const nextCustomTheme = { ...customDraft, name: CUSTOM_THEME_NAME };
+    // Apply theme only when saving
     applyTheme(nextCustomTheme);
     onThemeApplied?.(nextCustomTheme);
     setIsCustomEditorOpen(false);
