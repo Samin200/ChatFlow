@@ -323,7 +323,7 @@ export default function AppThemeModal({ open, onClose, onThemeApplied }) {
               className="px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-105 active:scale-95"
               style={{
                 color: "var(--color-text)",
-                backgroundColor: "color-mix(in srgb, var(--color-surface) 90%, transparent)",
+                backgroundColor: "color-mix(in srgb, var(--color-surface) 80%, transparent)",
               }}
             >
               Cancel
@@ -332,11 +332,11 @@ export default function AppThemeModal({ open, onClose, onThemeApplied }) {
               type="button"
               onClick={handleSaveChanges}
               disabled={!hasChanges || isSaving}
-              className="px-6 py-2.5 rounded-xl text-sm font-semibold transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              className="px-6 py-2.5 rounded-xl text-sm font-semibold transition-all hover:scale-105 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
               style={{
                 color: "white",
-                backgroundColor: hasChanges ? "var(--color-accent)" : "color-mix(in srgb, var(--color-text) 30%, transparent)",
-                boxShadow: hasChanges ? "0 4px 14px color-mix(in srgb, var(--color-accent) 50%, transparent)" : "none",
+                backgroundColor: hasChanges ? "var(--color-accent)" : "var(--color-primary)",
+                boxShadow: hasChanges ? "0 4px 14px color-mix(in srgb, var(--color-accent) 50%, transparent)" : "0 2px 8px color-mix(in srgb, var(--color-primary) 30%, transparent)",
               }}
             >
               {isSaving ? "Saving..." : "Save Changes"}
