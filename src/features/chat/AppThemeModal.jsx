@@ -238,124 +238,155 @@ function CustomThemeEditorModal({ draft, onChangeToken, onReset, onCancel, onSav
     <div className="absolute inset-0 z-20 flex items-end justify-center p-2 sm:items-center sm:p-3" onClick={onCancel}>
       <div className="absolute inset-0 bg-black/65" />
       <div
-        className="relative w-full max-w-xl rounded-2xl border p-3 sm:p-4 shadow-2xl max-h-[90dvh] overflow-y-auto"
+        className="relative w-full max-w-4xl rounded-3xl border p-6 sm:p-8 shadow-2xl max-h-[90dvh] overflow-y-auto"
         style={{
           borderColor: "color-mix(in srgb, var(--color-text) 14%, transparent)",
           backgroundColor: "color-mix(in srgb, var(--color-surface) 96%, black 4%)",
         }}
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex items-center justify-between mb-4">
-          <h4 className="text-lg font-semibold" style={{ color: "var(--color-text)" }}>Customize Theme</h4>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: draft.primary }} />
-            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: draft.accent }} />
-            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: draft.background, border: "1px solid rgba(255,255,255,0.2)" }} />
-          </div>
-        </div>
-
-        {/* Live Preview Card */}
-        <div
-          className="rounded-2xl border p-4 mb-4"
-          style={{ 
-            backgroundColor: draft.background,
-            borderColor: "color-mix(in srgb, var(--color-text) 10%, transparent)",
-            boxShadow: "0 4px 24px rgba(0,0,0,0.2)"
-          }}
-        >
-          <div className="flex items-center gap-2 mb-3">
-            <button
-              type="button"
-              className="rounded-lg px-3 py-1.5 text-xs font-semibold transition-all hover:scale-105"
-              style={{ backgroundColor: draft.primary, color: draft.text }}
-            >
-              Primary
-            </button>
-            <button
-              type="button"
-              className="rounded-lg px-3 py-1.5 text-xs font-semibold transition-all hover:scale-105"
-              style={{ backgroundColor: draft.secondary, color: draft.text }}
-            >
-              Secondary
-            </button>
-            <button
-              type="button"
-              className="rounded-lg px-3 py-1.5 text-xs font-semibold transition-all hover:scale-105"
-              style={{ backgroundColor: draft.accent, color: draft.background }}
-            >
-              Accent
-            </button>
-          </div>
-          <div
-            className="rounded-xl border p-3"
-            style={{ 
-              backgroundColor: draft.surface, 
-              borderColor: "color-mix(in srgb, draft.text 10%, transparent)" 
-            }}
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <h4 className="text-xl font-bold" style={{ color: "var(--color-text)" }}>Customize Theme</h4>
+          <button 
+            onClick={onCancel}
+            className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-105"
+            style={{ backgroundColor: "color-mix(in srgb, var(--color-text) 10%, transparent)" }}
           >
-            <p className="text-sm font-medium" style={{ color: draft.text }}>Surface Preview</p>
-            <p className="mt-1 text-xs opacity-70" style={{ color: draft.text }}>
-              Live preview updates as you pick colors.
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {CUSTOM_EDITOR_TOKENS.map(([tokenKey, label]) => (
-            <ColorField
-              key={tokenKey}
-              label={label}
-              value={draft[tokenKey]}
-              onChange={(value) => onChangeToken(tokenKey, value)}
-            />
-          ))}
-        </div>
-
-        {/* Action Buttons */}
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-2 pt-4 border-t" style={{ borderColor: "color-mix(in srgb, var(--color-text) 10%, transparent)" }}>
-          <button
-            type="button"
-            onClick={onReset}
-            className="rounded-lg px-3 py-2 text-xs font-medium transition-all hover:scale-105 active:scale-95 flex items-center gap-1.5"
-            style={{
-              color: "var(--color-text-muted)",
-              backgroundColor: "transparent",
-            }}
-          >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: "var(--color-text)" }}>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
-            Reset
           </button>
+        </div>
+
+        {/* Two Column Layout: Preview Left, Colors Right */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
           
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="rounded-lg border px-4 py-2 text-xs font-medium transition-all hover:scale-105 active:scale-95"
-              style={{
-                color: "var(--color-text)",
-                borderColor: "color-mix(in srgb, var(--color-text) 18%, transparent)",
-                backgroundColor: "color-mix(in srgb, var(--color-surface) 90%, transparent)",
+          {/* Left: Phone Preview */}
+          <div className="flex items-center justify-center">
+            <div 
+              className="relative w-64 h-[480px] rounded-[2.5rem] border-8 p-3 shadow-2xl"
+              style={{ 
+                backgroundColor: draft.background,
+                borderColor: "#1a1a1a",
+                boxShadow: `0 25px 50px -12px ${draft.primary}30, 0 0 0 1px ${draft.surface}`
               }}
             >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={onSave}
-              className="rounded-lg px-4 py-2 text-xs font-semibold transition-all hover:scale-105 active:scale-95 flex items-center gap-1.5"
-              style={{
-                color: "var(--color-background)",
-                backgroundColor: "var(--color-accent)",
-                boxShadow: "0 4px 12px color-mix(in srgb, var(--color-accent) 30%, transparent)"
-              }}
-            >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              Save Theme
-            </button>
+              {/* Phone Notch */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-6 bg-black rounded-b-2xl z-10" />
+              
+              {/* Screen Content */}
+              <div className="w-full h-full rounded-[2rem] overflow-hidden flex flex-col" style={{ backgroundColor: draft.background }}>
+                {/* Header */}
+                <div className="px-4 pt-8 pb-3 flex items-center gap-3" style={{ backgroundColor: draft.surface }}>
+                  <div 
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+                    style={{ backgroundColor: draft.primary, color: draft.text }}
+                  >
+                    CF
+                  </div>
+                  <span className="text-sm font-semibold" style={{ color: draft.text }}>ChatFlow</span>
+                </div>
+                
+                {/* Chat Preview */}
+                <div className="flex-1 p-4 space-y-3">
+                  {/* Their message */}
+                  <div className="flex justify-start">
+                    <div 
+                      className="rounded-2xl rounded-tl-md px-3 py-2 max-w-[80%]"
+                      style={{ backgroundColor: draft.surface, color: draft.text }}
+                    >
+                      <p className="text-xs">Hey! How are you?</p>
+                    </div>
+                  </div>
+                  {/* My message */}
+                  <div className="flex justify-end">
+                    <div 
+                      className="rounded-2xl rounded-tr-md px-3 py-2 max-w-[80%]"
+                      style={{ backgroundColor: draft.primary, color: draft.text }}
+                    >
+                      <p className="text-xs">I'm great! Thanks 😊</p>
+                    </div>
+                  </div>
+                  {/* Accent message */}
+                  <div className="flex justify-end">
+                    <div 
+                      className="rounded-2xl rounded-tr-md px-3 py-2 max-w-[80%]"
+                      style={{ backgroundColor: draft.accent, color: draft.background }}
+                    >
+                      <p className="text-xs font-medium">Check this out!</p>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Input Bar */}
+                <div className="px-3 py-2 flex items-center gap-2" style={{ backgroundColor: draft.surface }}>
+                  <div className="flex-1 h-8 rounded-full" style={{ backgroundColor: draft.background }} />
+                  <div 
+                    className="w-8 h-8 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: draft.accent }}
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: draft.background }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Color Controls */}
+          <div className="flex flex-col">
+            <div className="space-y-1">
+              {CUSTOM_EDITOR_TOKENS.map(([tokenKey, label]) => (
+                <ColorRow
+                  key={tokenKey}
+                  label={label}
+                  value={draft[tokenKey]}
+                  onChange={(value) => onChangeToken(tokenKey, value)}
+                />
+              ))}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="mt-6 pt-4 border-t flex items-center justify-between gap-3" style={{ borderColor: "color-mix(in srgb, var(--color-text) 10%, transparent)" }}>
+              <button
+                type="button"
+                onClick={onReset}
+                className="px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-105 active:scale-95"
+                style={{
+                  color: "var(--color-text)",
+                  backgroundColor: "color-mix(in srgb, var(--color-surface) 90%, transparent)",
+                }}
+              >
+                Reset
+              </button>
+              
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={onCancel}
+                  className="px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-105 active:scale-95"
+                  style={{
+                    color: "var(--color-text-muted)",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={onSave}
+                  className="px-6 py-2.5 rounded-xl text-sm font-semibold transition-all hover:scale-105 active:scale-95"
+                  style={{
+                    color: draft.background,
+                    backgroundColor: draft.accent,
+                    boxShadow: `0 4px 14px ${draft.accent}50`
+                  }}
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -363,31 +394,35 @@ function CustomThemeEditorModal({ draft, onChangeToken, onReset, onCancel, onSav
   );
 }
 
-function ColorField({ label, value, onChange }) {
+function ColorRow({ label, value, onChange }) {
   return (
-    <div
-      className="rounded-xl border p-3 transition-all hover:border-opacity-30"
-      style={{
-        borderColor: "color-mix(in srgb, var(--color-text) 12%, transparent)",
-        backgroundColor: "color-mix(in srgb, var(--color-surface) 95%, transparent)",
-      }}
-    >
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-medium" style={{ color: "var(--color-text)" }}>{label}</span>
-        <span className="text-[10px] uppercase tracking-wide font-mono" style={{ color: "var(--color-text-muted)" }}>{value}</span>
-      </div>
+    <div className="flex items-center gap-4 py-3 border-b" style={{ borderColor: "color-mix(in srgb, var(--color-text) 8%, transparent)" }}>
+      {/* Color Swatch */}
+      <div 
+        className="w-10 h-10 rounded-full flex-shrink-0 shadow-lg"
+        style={{ 
+          backgroundColor: value,
+          boxShadow: `0 4px 12px ${value}60`
+        }}
+      />
       
-      {/* Color Preview Box */}
-      <label className="block cursor-pointer group">
-        <div
-          className="w-full rounded-lg border-2 transition-all duration-200 group-hover:scale-[1.02] group-active:scale-[0.98]"
-          style={{
+      {/* Label */}
+      <span className="flex-1 text-sm font-medium" style={{ color: "var(--color-text)" }}>{label}</span>
+      
+      {/* Color Picker Button */}
+      <label className="relative cursor-pointer group">
+        <div 
+          className="w-12 h-12 rounded-full border-2 transition-all duration-200 group-hover:scale-110 flex items-center justify-center"
+          style={{ 
             backgroundColor: value,
-            borderColor: "color-mix(in srgb, var(--color-text) 15%, transparent)",
-            height: "44px",
-            boxShadow: `0 4px 12px ${value}40, inset 0 1px 0 rgba(255,255,255,0.1)`,
+            borderColor: "color-mix(in srgb, var(--color-text) 20%, transparent)",
+            boxShadow: `0 0 0 4px ${value}20, inset 0 2px 4px rgba(255,255,255,0.2)`
           }}
-        />
+        >
+          <svg className="w-5 h-5 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: value === '#ffffff' ? '#000' : '#fff' }}>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+          </svg>
+        </div>
         <input
           type="color"
           value={value}
@@ -395,6 +430,11 @@ function ColorField({ label, value, onChange }) {
           className="sr-only"
         />
       </label>
+      
+      {/* Hex Value */}
+      <span className="w-16 text-xs font-mono text-right uppercase" style={{ color: "var(--color-text-muted)" }}>
+        {value.replace('#', '')}
+      </span>
     </div>
   );
 }
