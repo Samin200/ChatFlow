@@ -246,34 +246,56 @@ function CustomThemeEditorModal({ draft, onChangeToken, onReset, onCancel, onSav
         }}
         onClick={(event) => event.stopPropagation()}
       >
-        <h4 className="text-lg font-semibold" style={{ color: "var(--color-text)" }}>Customize Theme</h4>
+        <div className="flex items-center justify-between mb-4">
+          <h4 className="text-lg font-semibold" style={{ color: "var(--color-text)" }}>Customize Theme</h4>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: draft.primary }} />
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: draft.accent }} />
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: draft.background, border: "1px solid rgba(255,255,255,0.2)" }} />
+          </div>
+        </div>
 
+        {/* Live Preview Card */}
         <div
-          className="mt-3 rounded-xl border p-3"
-          style={{ backgroundColor: draft.background }}
+          className="rounded-2xl border p-4 mb-4"
+          style={{ 
+            backgroundColor: draft.background,
+            borderColor: "color-mix(in srgb, var(--color-text) 10%, transparent)",
+            boxShadow: "0 4px 24px rgba(0,0,0,0.2)"
+          }}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 mb-3">
             <button
               type="button"
-              className="rounded-lg px-3 py-1.5 text-xs font-semibold"
+              className="rounded-lg px-3 py-1.5 text-xs font-semibold transition-all hover:scale-105"
               style={{ backgroundColor: draft.primary, color: draft.text }}
             >
               Primary
             </button>
             <button
               type="button"
-              className="rounded-lg px-3 py-1.5 text-xs font-semibold"
+              className="rounded-lg px-3 py-1.5 text-xs font-semibold transition-all hover:scale-105"
               style={{ backgroundColor: draft.secondary, color: draft.text }}
             >
               Secondary
             </button>
+            <button
+              type="button"
+              className="rounded-lg px-3 py-1.5 text-xs font-semibold transition-all hover:scale-105"
+              style={{ backgroundColor: draft.accent, color: draft.background }}
+            >
+              Accent
+            </button>
           </div>
           <div
-            className="mt-3 rounded-lg border p-3"
-            style={{ backgroundColor: draft.surface, color: draft.text }}
+            className="rounded-xl border p-3"
+            style={{ 
+              backgroundColor: draft.surface, 
+              borderColor: "color-mix(in srgb, draft.text 10%, transparent)" 
+            }}
           >
-            <p className="text-sm font-medium">Surface Preview</p>
-            <p className="mt-1 text-xs" style={{ color: draft.text }}>
+            <p className="text-sm font-medium" style={{ color: draft.text }}>Surface Preview</p>
+            <p className="mt-1 text-xs opacity-70" style={{ color: draft.text }}>
               Live preview updates as you pick colors.
             </p>
           </div>
@@ -290,43 +312,52 @@ function CustomThemeEditorModal({ draft, onChangeToken, onReset, onCancel, onSav
           ))}
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
+        {/* Action Buttons */}
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-2 pt-4 border-t" style={{ borderColor: "color-mix(in srgb, var(--color-text) 10%, transparent)" }}>
           <button
             type="button"
             onClick={onReset}
-            className="rounded-lg border px-3 py-2 text-xs font-medium"
+            className="rounded-lg px-3 py-2 text-xs font-medium transition-all hover:scale-105 active:scale-95 flex items-center gap-1.5"
             style={{
-              color: "var(--color-text)",
-              borderColor: "color-mix(in srgb, var(--color-text) 20%, transparent)",
-              backgroundColor: "color-mix(in srgb, var(--color-surface) 90%, transparent)",
+              color: "var(--color-text-muted)",
+              backgroundColor: "transparent",
             }}
           >
-            Reset to Default
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Reset
           </button>
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-lg border px-3 py-2 text-xs font-medium"
-            style={{
-              color: "var(--color-text)",
-              borderColor: "color-mix(in srgb, var(--color-text) 20%, transparent)",
-              backgroundColor: "color-mix(in srgb, var(--color-surface) 90%, transparent)",
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onSave}
-            className="rounded-lg border px-3 py-2 text-xs font-medium"
-            style={{
-              color: "var(--color-text)",
-              borderColor: "color-mix(in srgb, var(--color-accent) 44%, transparent)",
-              backgroundColor: "color-mix(in srgb, var(--color-accent) 22%, var(--color-surface) 78%)",
-            }}
-          >
-            Save Theme
-          </button>
+          
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="rounded-lg border px-4 py-2 text-xs font-medium transition-all hover:scale-105 active:scale-95"
+              style={{
+                color: "var(--color-text)",
+                borderColor: "color-mix(in srgb, var(--color-text) 18%, transparent)",
+                backgroundColor: "color-mix(in srgb, var(--color-surface) 90%, transparent)",
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={onSave}
+              className="rounded-lg px-4 py-2 text-xs font-semibold transition-all hover:scale-105 active:scale-95 flex items-center gap-1.5"
+              style={{
+                color: "var(--color-background)",
+                backgroundColor: "var(--color-accent)",
+                boxShadow: "0 4px 12px color-mix(in srgb, var(--color-accent) 30%, transparent)"
+              }}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Save Theme
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -335,34 +366,36 @@ function CustomThemeEditorModal({ draft, onChangeToken, onReset, onCancel, onSav
 
 function ColorField({ label, value, onChange }) {
   return (
-    <label
-      className="rounded-lg border p-2"
+    <div
+      className="rounded-xl border p-3 transition-all hover:border-opacity-30"
       style={{
-        borderColor: "color-mix(in srgb, var(--color-text) 14%, transparent)",
-        backgroundColor: "color-mix(in srgb, var(--color-surface) 90%, transparent)",
+        borderColor: "color-mix(in srgb, var(--color-text) 12%, transparent)",
+        backgroundColor: "color-mix(in srgb, var(--color-surface) 95%, transparent)",
       }}
     >
-      <span className="block text-[11px] mb-1" style={{ color: "var(--color-text-muted)" }}>{label}</span>
-      <div
-        className="mb-2 w-full rounded-md border shadow-inner transition-colors duration-200"
-        style={{
-          backgroundColor: value,
-          borderRadius: "6px",
-          width: "100%",
-          height: "40px",
-          border: "1px solid rgba(255,255,255,0.15)",
-        }}
-      />
-      <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-medium" style={{ color: "var(--color-text)" }}>{label}</span>
+        <span className="text-[10px] uppercase tracking-wide font-mono" style={{ color: "var(--color-text-muted)" }}>{value}</span>
+      </div>
+      
+      {/* Color Preview Box */}
+      <label className="block cursor-pointer group">
+        <div
+          className="w-full rounded-lg border-2 transition-all duration-200 group-hover:scale-[1.02] group-active:scale-[0.98]"
+          style={{
+            backgroundColor: value,
+            borderColor: "color-mix(in srgb, var(--color-text) 15%, transparent)",
+            height: "44px",
+            boxShadow: `0 4px 12px ${value}40, inset 0 1px 0 rgba(255,255,255,0.1)`,
+          }}
+        />
         <input
           type="color"
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          className="h-7 w-9 cursor-pointer rounded border bg-transparent p-0"
-          style={{ borderColor: "color-mix(in srgb, var(--color-text) 20%, transparent)" }}
+          className="sr-only"
         />
-        <span className="text-[11px] uppercase" style={{ color: "var(--color-text)" }}>{value}</span>
-      </div>
-    </label>
+      </label>
+    </div>
   );
 }
