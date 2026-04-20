@@ -318,7 +318,8 @@ function ThemeBlock({ panel, onChangeTheme, onToggleChatSide }) {
                   solidColor: event.target.value,
                 })
               }
-              className="h-10 w-full rounded-lg border border-white/15 bg-transparent cursor-pointer"
+              className="h-10 w-full rounded-lg border border-white/15 cursor-pointer"
+              style={{ backgroundColor: appearance.solidColor ?? defaultBackground }}
             />
           </div>
         )}
@@ -341,7 +342,8 @@ function ThemeBlock({ panel, onChangeTheme, onToggleChatSide }) {
                       gradientFrom: event.target.value,
                     })
                   }
-                  className="h-10 w-full rounded-lg border border-white/15 bg-transparent cursor-pointer"
+                  className="h-10 w-full rounded-lg border border-white/15 cursor-pointer"
+                  style={{ backgroundColor: appearance.gradientFrom ?? defaultSurface }}
                 />
               </div>
               <div>
@@ -359,7 +361,8 @@ function ThemeBlock({ panel, onChangeTheme, onToggleChatSide }) {
                       gradientTo: event.target.value,
                     })
                   }
-                  className="h-10 w-full rounded-lg border border-white/15 bg-transparent cursor-pointer"
+                  className="h-10 w-full rounded-lg border border-white/15 cursor-pointer"
+                  style={{ backgroundColor: appearance.gradientTo ?? defaultSecondary }}
                 />
               </div>
             </div>
