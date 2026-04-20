@@ -12,20 +12,32 @@ export default function CallOverlay({
   toggleMic,
   toggleCamera,
 }) {
+  console.log('[CALL] CallOverlay render - callState:', callState, 'hasLocalStream:', !!localStream, 'hasRemoteStream:', !!remoteStream, 'activeCall:', activeCall);
+  
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
+  const remoteAudioRef = useRef(null); // Separate ref for voice calls
   const [isMicMuted, setIsMicMuted] = useState(false);
   const [isCamOff, setIsCamOff] = useState(false);
 
   useEffect(() => {
+    console.log('[CALL] localStream effect - hasStream:', !!localStream, 'hasRef:', !!localVideoRef.current);
     if (localVideoRef.current && localStream) {
       localVideoRef.current.srcObject = localStream;
     }
   }, [localStream, callState]);
 
   useEffect(() => {
+    console.log('[CALL] remoteStream effect - hasStream:', !!remoteStream, 'videoRef:', !!remoteVideoRef.current, 'audioRef:', !!remoteAudioRef.current);
+    // For video calls, attach to video element
     if (remoteVideoRef.current && remoteStream) {
       remoteVideoRef.current.srcObject = remoteStream;
+      console.log('[CALL] remoteStream attached to video element');
+    }
+    // For voice calls, attach to audio element
+    if (remoteAudioRef.current && remoteStream) {
+      remoteAudioRef.current.srcObject = remoteStream;
+      console.log('[CALL] remoteStream attached to audio element');
     }
   }, [remoteStream, callState]);
 
@@ -89,12 +101,29 @@ export default function CallOverlay({
   }, [callState, incomingCall, playRingCycle, stopRingtone]);
   // ---------------------------------
 
+  const handleAcceptCall = () => {
+    console.log('[CALL] accept button clicked');
+    acceptCall();
+  };
+
+  const handleRejectCall = () => {
+    console.log('[CALL] reject/decline button clicked');
+    rejectCall();
+  };
+
+  const handleEndCall = () => {
+    console.log('[CALL] end call button clicked');
+    endCall();
+  };
+
   const handleToggleMic = () => {
+    console.log('[CALL] toggle mic');
     toggleMic();
     setIsMicMuted(!isMicMuted);
   };
 
   const handleToggleCamera = () => {
+    console.log('[CALL] toggle camera');
     toggleCamera();
     setIsCamOff(!isCamOff);
   };
@@ -122,10 +151,10 @@ export default function CallOverlay({
           </div>
         </div>
         <div className="flex gap-2 mt-4 mt-4">
-          <button onClick={rejectCall} className="flex-1 py-2 rounded-xl text-sm font-semibold text-white bg-red-500 hover:bg-red-600 transition-colors">
+          <button onClick={handleRejectCall} className="flex-1 py-2 rounded-xl text-sm font-semibold text-white bg-red-500 hover:bg-red-600 transition-colors">
             Decline
           </button>
-          <button onClick={acceptCall} className="flex-1 py-2 rounded-xl text-sm font-semibold text-white bg-green-500 hover:bg-green-600 transition-colors">
+          <button onClick={handleAcceptCall} className="flex-1 py-2 rounded-xl text-sm font-semibold text-white bg-green-500 hover:bg-green-600 transition-colors">
             Accept
           </button>
         </div>
@@ -146,7 +175,15 @@ export default function CallOverlay({
             
             {/* PIP Local Video */}
             <div className="absolute bottom-6 right-6 w-32 md:w-48 aspect-[3/4] md:aspect-video rounded-xl overflow-hidden border-2 shadow-2xl" style={{ borderColor: "var(--color-surface)", backgroundColor: "#111" }}>
-              <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover mirror" />
+              {isCamOff ? (
+                <div className="w-full h-full flex items-center justify-center">
+                  <svg className="w-10 h-10 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                </div>
+              ) : (
+                <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover" style={{ transform: "scaleX(-1)" }} />
+              )}
             </div>
 
             {callState !== "connected" && (
@@ -170,8 +207,8 @@ export default function CallOverlay({
                 {callState === "connected" ? "Connected" : "Ringing..."}
               </p>
             </div>
-            {/* Only mount audio element to play remote stream when not rendering <video> */}
-            <audio ref={remoteVideoRef} autoPlay playsInline className="hidden" />
+            {/* Audio element for voice calls - using separate ref */}
+            <audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />
           </div>
         )}
       </div>
@@ -205,7 +242,7 @@ export default function CallOverlay({
         )}
 
         <button
-          onClick={endCall}
+          onClick={handleEndCall}
           className="w-16 h-16 rounded-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 bg-red-500 text-white shadow-lg shadow-red-500/20"
         >
           <svg className="w-8 h-8 rotate-135" fill="currentColor" viewBox="0 0 24 24" style={{ transform: "rotate(135deg)" }}>

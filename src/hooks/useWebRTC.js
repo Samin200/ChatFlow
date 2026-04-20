@@ -67,6 +67,7 @@ export function useWebRTC(currentUser, onCallEndedCallback) {
 
     pc.onicecandidate = (event) => {
       if (event.candidate) {
+        console.log('[CALL] sending ICE candidate');
         emitSocketEvent("call:ice-candidate", {
           targetId,
           candidate: event.candidate,
@@ -75,6 +76,7 @@ export function useWebRTC(currentUser, onCallEndedCallback) {
     };
 
     pc.ontrack = (event) => {
+      console.log('[CALL] ontrack received, stream:', event.streams[0]?.id, 'tracks:', event.streams[0]?.getTracks().map(t => t.kind));
       setRemoteStream(event.streams[0]);
     };
 
@@ -82,28 +84,37 @@ export function useWebRTC(currentUser, onCallEndedCallback) {
   }, []);
 
   const initiateCall = useCallback(async (targetId, chatId, isVideo = false) => {
+    console.log('[CALL] initiating call to:', targetId, 'isVideo:', isVideo);
     try {
       const audioConstraints = {
         echoCancellation: true,
         noiseSuppression: true,
         autoGainControl: true,
       };
+      console.log('[CALL] requesting getUserMedia with audio constraints:', audioConstraints, 'video:', isVideo);
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: audioConstraints, 
         video: isVideo ? { width: { ideal: 1280 }, height: { ideal: 720 } } : false 
       });
+      console.log('[CALL] getUserMedia success, stream tracks:', stream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled, id: t.id })));
       setLocalStream(stream);
 
       const pc = initPeerConnection(targetId);
-      stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+      stream.getTracks().forEach((track) => {
+        console.log('[CALL] adding track to peer connection:', track.kind);
+        pc.addTrack(track, stream);
+      });
 
       const offer = await pc.createOffer();
+      console.log('[CALL] offer created:', offer.type, 'sdp length:', offer.sdp?.length);
       await pc.setLocalDescription(offer);
+      console.log('[CALL] local description set');
 
       const callId = `call_${Date.now()}`;
       setCallState("calling");
       setActiveCall({ callId, targetId, chatId, isVideo });
 
+      console.log('[CALL] emitting call:invite');
       emitSocketEvent("call:invite", {
         callId,
         targetId,
@@ -112,49 +123,56 @@ export function useWebRTC(currentUser, onCallEndedCallback) {
         isVideo,
       });
     } catch (err) {
-      console.error("Failed to start call:", err);
+      console.error('[CALL] Failed to start call:', err.name, err.message);
       cleanup();
     }
   }, [cleanup, initPeerConnection]);
 
   const acceptCall = useCallback(async () => {
-    if (!incomingCall) return;
+    const currentIncoming = incomingCallRef.current;
+    if (!currentIncoming) return;
+    console.log('[CALL] accepting call from:', currentIncoming.callerId);
     try {
-      const { callerId, offer, isVideo, callId, chatId } = incomingCall;
+      const { callerId, offer, isVideo, callId, chatId } = currentIncoming;
       
       const audioConstraints = {
         echoCancellation: true,
         noiseSuppression: true,
         autoGainControl: true,
       };
+      console.log('[CALL] requesting getUserMedia for answer');
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: audioConstraints, 
         video: isVideo ? { width: { ideal: 1280 }, height: { ideal: 720 } } : false 
       });
+      console.log('[CALL] getUserMedia success, stream tracks:', stream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled })));
       setLocalStream(stream);
 
       const pc = initPeerConnection(callerId);
       stream.getTracks().forEach((track) => pc.addTrack(track, stream));
 
       await pc.setRemoteDescription(new RTCSessionDescription(offer));
+      console.log('[CALL] remote description set');
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
+      console.log('[CALL] answer created and local description set');
 
       setCallState("connected");
       setActiveCall({ callId, targetId: callerId, chatId, isVideo });
       setIncomingCall(null);
       callStartTime.current = Date.now();
 
+      console.log('[CALL] emitting call:accepted');
       emitSocketEvent("call:accepted", {
         callId,
         targetId: callerId,
         answer,
       });
     } catch (err) {
-      console.error("Failed to accept call", err);
+      console.error('[CALL] Failed to accept call', err);
       cleanup();
     }
-  }, [incomingCall, initPeerConnection, cleanup]);
+  }, [initPeerConnection, cleanup]);
 
   const rejectCall = useCallback(() => {
     const currentIncoming = incomingCallRef.current;
@@ -212,9 +230,10 @@ export function useWebRTC(currentUser, onCallEndedCallback) {
     if (!currentUser?.id) return;
 
     const handleInvite = (data) => {
+      console.log('[CALL] call:invite received from:', data.callerId, 'isVideo:', data.isVideo);
       // Use ref to get latest state
       if (callStateRef.current !== "idle") {
-        // Busy
+        console.log('[CALL] rejecting invite - busy, current state:', callStateRef.current);
         emitSocketEvent("call:rejected", { callId: data.callId, targetId: data.callerId, reason: "busy" });
         return;
       }
@@ -223,13 +242,15 @@ export function useWebRTC(currentUser, onCallEndedCallback) {
     };
 
     const handleAccepted = async (data) => {
+      console.log('[CALL] call:accepted received');
       if (pcRef.current && data.answer) {
         try {
           await pcRef.current.setRemoteDescription(new RTCSessionDescription(data.answer));
+          console.log('[CALL] remote description set on caller side, call connected');
           setCallState("connected");
           callStartTime.current = Date.now();
         } catch (err) {
-          console.error("Error setting remote description:", err);
+          console.error('[CALL] Error setting remote description:', err);
         }
       }
     };
@@ -239,11 +260,13 @@ export function useWebRTC(currentUser, onCallEndedCallback) {
     };
 
     const handleIceCandidate = async (data) => {
+      console.log('[CALL] call:ice-candidate received');
       if (pcRef.current && data.candidate) {
         try {
           await pcRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
+          console.log('[CALL] ICE candidate added successfully');
         } catch (e) {
-          console.error("Error adding ice candidate", e);
+          console.error('[CALL] Error adding ice candidate', e);
         }
       }
     };
