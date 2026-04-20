@@ -1,0 +1,292 @@
+@import "tailwindcss";
+
+:root {
+  --color-primary: #5882f6;
+  --color-secondary: #80a5fa;
+  --color-tertiary: #93c5fd;
+  --color-neutral: #5f172a;
+  --color-background: #020617;
+  --color-surface: #0f172a;
+  --color-text: #e2e8f0;
+  --color-text-muted: #94a3b8;
+  --color-accent: #14b8a6;
+}
+
+/* Guardrails for built-in light theme contrast. */
+:root[data-theme="light"] {
+  --color-background: #f3f4f6;
+  --color-surface: #ffffff;
+  --color-text: #0f172a;
+  --color-text-muted: #475569;
+}
+
+/* ── Scrollbar styling ──────────────────────────────────────────────────────── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-radius: 99px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* ── Base ────────────────────────────────────────────────────────────────────── */
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-background);
+  color: var(--color-text);
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  
+  /* Mobile responsiveness base */
+  font-size: 16px;
+  overscroll-behavior-y: none;
+}
+
+@media (max-width: 640px) {
+  html, body {
+    font-size: 14px;
+    height: 100dvh;
+    width: 100vw;
+    overflow: hidden;
+    /* Prevent default pull-to-refresh on mobile browsers */
+    overscroll-behavior-y: contain;
+  }
+}
+
+/* ── Animations ──────────────────────────────────────────────────────────────── */
+@keyframes bounce-dot {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-6px); }
+}
+
+.animate-typing-dot {
+  animation: bounce-dot 1.2s infinite;
+}
+
+@keyframes message-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-message-in {
+  animation: message-in 240ms ease-out both;
+}
+
+@keyframes reaction-pop {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.86);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-reaction-pop {
+  animation: reaction-pop 220ms ease-out both;
+}
+
+@keyframes badge-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 45%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 8px color-mix(in srgb, var(--color-accent) 0%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 0%, transparent);
+  }
+}
+
+.animate-badge-pulse {
+  animation: badge-pulse 2.2s infinite;
+}
+
+/* Slide in from bottom */
+@keyframes slide-in-from-bottom-1 {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-in {
+  animation-fill-mode: both;
+}
+
+.fade-in {
+  animation-name: fade-in;
+}
+
+.slide-in-from-bottom-1 {
+  animation-name: slide-in-from-bottom-1;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.duration-200 {
+  animation-duration: 200ms;
+}
+
+/* ── Glassmorphism utilities ─────────────────────────────────────────────────── */
+.glass {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ── Safe area padding (mobile notch) ────────────────────────────────────────── */
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.mobile-tap-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* ── Selection color ─────────────────────────────────────────────────────────── */
+::selection {
+  background-color: color-mix(in srgb, var(--color-accent) 35%, transparent);
+  color: white;
+}
+
+/* ── Input autofill override ─────────────────────────────────────────────────── */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: white;
+  -webkit-box-shadow: 0 0 0px 1000px rgba(255, 255, 255, 0.05) inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* ── Prevent text selection on buttons ───────────────────────────────────────── */
+button {
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+/* ── Smooth transitions global ───────────────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+}
+
+/* Emoji picker tone aligned with chat theme (no black/gray slab) */
+.chat-emoji-picker.EmojiPickerReact,
+.reaction-emoji-picker.EmojiPickerReact {
+  --epr-bg-color: color-mix(in srgb, var(--color-surface) 86%, black 14%);
+  --epr-category-label-bg-color: color-mix(in srgb, var(--color-surface) 86%, black 14%);
+  --epr-hover-bg-color: rgba(255, 255, 255, 0.08);
+  --epr-focus-bg-color: color-mix(in srgb, var(--color-accent) 24%, transparent);
+  --epr-search-border-color: color-mix(in srgb, var(--color-accent) 70%, transparent);
+  --epr-search-input-bg-color: color-mix(in srgb, var(--color-surface) 92%, white 8%);
+  --epr-text-color: var(--color-text);
+  --epr-picker-border-color: color-mix(in srgb, var(--color-text) 12%, transparent);
+  background: color-mix(in srgb, var(--color-surface) 86%, black 14%) !important;
+}
+
+.chat-emoji-picker .epr-body,
+.chat-emoji-picker .epr-emoji-category-content,
+.chat-emoji-picker .epr-category-nav,
+.reaction-emoji-picker .epr-body,
+.reaction-emoji-picker .epr-emoji-category-content,
+.reaction-emoji-picker .epr-category-nav {
+  background: color-mix(in srgb, var(--color-surface) 86%, black 14%) !important;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.kothaboli-brand-icon {
+  filter: saturate(1.1) brightness(1.04) drop-shadow(0 0 10px color-mix(in srgb, var(--color-accent) 50%, transparent));
+  transition: filter 220ms ease;
+}
+
+.kothaboli-icon-shell {
+  transition: background-color 220ms ease, box-shadow 220ms ease;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-text) 10%, transparent);
+}
+
+:root[data-theme="midnight-blue"] .kothaboli-brand-icon,
+:root[data-theme="custom"] .kothaboli-brand-icon {
+  filter: saturate(1.1) brightness(1.04) hue-rotate(0deg) drop-shadow(0 0 10px color-mix(in srgb, var(--color-accent) 50%, transparent));
+}
+
+:root[data-theme="deep-purple"] .kothaboli-brand-icon {
+  filter: saturate(1.22) brightness(1.06) hue-rotate(68deg) drop-shadow(0 0 11px color-mix(in srgb, var(--color-accent) 54%, transparent));
+}
+
+:root[data-theme="sunset-orange"] .kothaboli-brand-icon {
+  filter: saturate(1.35) brightness(1.04) hue-rotate(142deg) drop-shadow(0 0 12px color-mix(in srgb, var(--color-accent) 58%, transparent));
+}
+
+:root[data-theme="light"] .kothaboli-brand-icon {
+  filter: saturate(1.05) brightness(1.06) hue-rotate(168deg) drop-shadow(0 0 8px color-mix(in srgb, var(--color-accent) 45%, transparent));
+}
+
+:root[data-theme="light"] .kothaboli-icon-shell {
+  background-color: color-mix(in srgb, white 96%, var(--color-surface) 4%) !important;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-text) 10%, transparent),
+    0 8px 20px color-mix(in srgb, var(--color-accent) 10%, transparent);
+}
+
+:root[data-theme="dark-amoled"] .kothaboli-brand-icon {
+  filter: saturate(1.16) brightness(1.08) hue-rotate(8deg) drop-shadow(0 0 12px color-mix(in srgb, var(--color-accent) 60%, transparent));
+}
