@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import Swal from "sweetalert2";
 import {
   BUILT_IN_THEMES,
   applyTheme,
@@ -28,11 +29,25 @@ export default function AppThemeModal({ open, onClose, onThemeApplied }) {
   const [isCustomEditorOpen, setIsCustomEditorOpen] = useState(false);
   const [customDraft, setCustomDraft] = useState(null);
   const [editorSnapshot, setEditorSnapshot] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
 
+  // Store original saved theme for cancel/restore functionality
+  const originalThemeRef = useRef(null);
+  const originalThemeNameRef = useRef(null);
+  const originalThemesRef = useRef(null);
+
+  // Initialize state when modal opens - store deep copy of original theme
   useEffect(() => {
     if (!open) return;
     const storedThemes = getAppThemes();
     const storedActiveThemeName = getActiveThemeName();
+    const currentTheme = findTheme(storedThemes, storedActiveThemeName);
+
+    // Store deep copies of original state for cancel functionality
+    originalThemeRef.current = JSON.parse(JSON.stringify(currentTheme));
+    originalThemeNameRef.current = storedActiveThemeName;
+    originalThemesRef.current = JSON.parse(JSON.stringify(storedThemes));
+
     setThemes(storedThemes);
     setActiveThemeName(storedActiveThemeName);
     setIsCustomEditorOpen(false);
@@ -40,23 +55,79 @@ export default function AppThemeModal({ open, onClose, onThemeApplied }) {
     setEditorSnapshot(null);
   }, [open]);
 
-  const customTheme = useMemo(() => findTheme(themes, CUSTOM_THEME_NAME), [themes]);
+  // Compute hasChanges by comparing current selection to original saved theme
+  const hasChanges = useMemo(() => {
+    if (!originalThemeNameRef.current) return false;
+    if (activeThemeName !== originalThemeNameRef.current) return true;
 
-  // NOTE: We no longer apply theme immediately on draft changes
-  // Theme is only applied when user clicks "Save Theme"
-  // This allows testing colors before committing
+    const currentTheme = findTheme(themes, activeThemeName);
+    const originalTheme = originalThemeRef.current;
+
+    if (!currentTheme || !originalTheme) return false;
+
+    // Deep comparison of theme properties
+    const keysToCompare = ['primary', 'secondary', 'tertiary', 'neutral', 'background', 'surface', 'text', 'accent'];
+    return keysToCompare.some(key => currentTheme[key] !== originalTheme[key]);
+  }, [activeThemeName, themes]);
+
+
+  const customTheme = useMemo(() => findTheme(themes, CUSTOM_THEME_NAME), [themes]);
 
   const handleSelectTheme = (name) => {
     const selectedTheme = findTheme(themes, name);
     setActiveThemeName(selectedTheme.name);
-    saveActiveThemeName(selectedTheme.name);
+
+    // Apply preview to DOM immediately (but don't save)
     applyTheme(selectedTheme);
     onThemeApplied?.(selectedTheme);
+
     if (selectedTheme.name === CUSTOM_THEME_NAME) {
       openCustomThemeEditor(selectedTheme);
-    } else {
-      onClose?.();
     }
+  };
+
+  const handleSaveChanges = async () => {
+    setIsSaving(true);
+    try {
+      const selectedTheme = findTheme(themes, activeThemeName);
+
+      // Save to localStorage (persist theme)
+      saveActiveThemeName(activeThemeName);
+      saveAppThemes(themes);
+      applyTheme(selectedTheme);
+      onThemeApplied?.(selectedTheme);
+
+      // Update original refs to match new saved state
+      originalThemeRef.current = JSON.parse(JSON.stringify(selectedTheme));
+      originalThemeNameRef.current = activeThemeName;
+      originalThemesRef.current = JSON.parse(JSON.stringify(themes));
+
+      await Swal.fire({
+        icon: "success",
+        title: "Theme saved",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+
+      onClose?.();
+    } catch (err) {
+      await Swal.fire({
+        icon: "error",
+        title: err.message || "Failed to save theme",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Handle modal close/cancel - revert to original theme if unsaved changes
+  const handleCancel = () => {
+    if (hasChanges && originalThemeRef.current) {
+      // Revert to original saved theme
+      applyTheme(originalThemeRef.current);
+      onThemeApplied?.(originalThemeRef.current);
+    }
+    onClose?.();
   };
 
   const openCustomThemeEditor = (themeToEdit) => {
@@ -89,36 +160,58 @@ export default function AppThemeModal({ open, onClose, onThemeApplied }) {
       const restored = findTheme(editorSnapshot.themes, editorSnapshot.activeThemeName);
       applyTheme(restored);
       onThemeApplied?.(restored);
-      saveActiveThemeName(editorSnapshot.activeThemeName);
     }
     setIsCustomEditorOpen(false);
     setCustomDraft(null);
     setEditorSnapshot(null);
   };
 
-  const handleSaveCustomTheme = () => {
+  const handleSaveCustomTheme = async () => {
     if (!customDraft) return;
-    const nextThemes = themes.map((theme) =>
-      theme.name === CUSTOM_THEME_NAME ? { ...customDraft, name: CUSTOM_THEME_NAME } : theme
-    );
-    setThemes(nextThemes);
-    saveAppThemes(nextThemes);
-    setActiveThemeName(CUSTOM_THEME_NAME);
-    saveActiveThemeName(CUSTOM_THEME_NAME);
-    const nextCustomTheme = { ...customDraft, name: CUSTOM_THEME_NAME };
-    // Apply theme only when saving
-    applyTheme(nextCustomTheme);
-    onThemeApplied?.(nextCustomTheme);
-    setIsCustomEditorOpen(false);
-    setCustomDraft(null);
-    setEditorSnapshot(null);
-    onClose?.();
+    setIsSaving(true);
+    try {
+      const nextThemes = themes.map((theme) =>
+        theme.name === CUSTOM_THEME_NAME ? { ...customDraft, name: CUSTOM_THEME_NAME } : theme
+      );
+      setThemes(nextThemes);
+      saveAppThemes(nextThemes);
+      setActiveThemeName(CUSTOM_THEME_NAME);
+      saveActiveThemeName(CUSTOM_THEME_NAME);
+      const nextCustomTheme = { ...customDraft, name: CUSTOM_THEME_NAME };
+      applyTheme(nextCustomTheme);
+      onThemeApplied?.(nextCustomTheme);
+
+      // Update original refs to match new saved state
+      originalThemeRef.current = JSON.parse(JSON.stringify(nextCustomTheme));
+      originalThemeNameRef.current = CUSTOM_THEME_NAME;
+      originalThemesRef.current = JSON.parse(JSON.stringify(nextThemes));
+
+      setIsCustomEditorOpen(false);
+      setCustomDraft(null);
+      setEditorSnapshot(null);
+
+      await Swal.fire({
+        icon: "success",
+        title: "Theme saved",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+
+      onClose?.();
+    } catch (err) {
+      await Swal.fire({
+        icon: "error",
+        title: err.message || "Failed to save theme",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[130] flex items-end justify-center p-2 sm:items-center sm:p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[130] flex items-end justify-center p-2 sm:items-center sm:p-4" onClick={handleCancel}>
       <div className="absolute inset-0 bg-black/65" />
       <div
         className="relative w-full max-w-4xl rounded-2xl border shadow-2xl max-h-[92dvh] overflow-hidden"
@@ -131,11 +224,11 @@ export default function AppThemeModal({ open, onClose, onThemeApplied }) {
         <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: "color-mix(in srgb, var(--color-text) 14%, transparent)" }}>
           <h3 className="text-xl font-semibold" style={{ color: "var(--color-text)" }}>Design System Board</h3>
           <button
-            onClick={onClose}
+            onClick={handleCancel}
             className="rounded-lg px-3 py-1.5"
             style={{ color: "var(--color-text-muted)" }}
           >
-            Close
+            Cancel
           </button>
         </div>
 
@@ -219,6 +312,25 @@ export default function AppThemeModal({ open, onClose, onThemeApplied }) {
           })}
         </div>
 
+        {/* Save Changes Button - Bottom Right */}
+        {!isCustomEditorOpen && (
+          <div className="px-5 py-4 border-t flex justify-end" style={{ borderColor: "color-mix(in srgb, var(--color-text) 14%, transparent)" }}>
+            <button
+              type="button"
+              onClick={handleSaveChanges}
+              disabled={!hasChanges || isSaving}
+              className="px-6 py-2.5 rounded-xl text-sm font-semibold transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              style={{
+                color: "var(--color-background)",
+                backgroundColor: hasChanges ? "var(--color-accent)" : "color-mix(in srgb, var(--color-text) 30%, transparent)",
+                boxShadow: hasChanges ? "0 4px 14px color-mix(in srgb, var(--color-accent) 50%, transparent)" : "none",
+              }}
+            >
+              {isSaving ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
+        )}
+
         {isCustomEditorOpen && customDraft ? (
           <CustomThemeEditorModal
             draft={customDraft}
@@ -226,6 +338,8 @@ export default function AppThemeModal({ open, onClose, onThemeApplied }) {
             onReset={handleResetCustomDraft}
             onCancel={handleCancelCustomEditor}
             onSave={handleSaveCustomTheme}
+            hasChanges={hasChanges}
+            isSaving={isSaving}
           />
         ) : null}
       </div>
@@ -233,7 +347,7 @@ export default function AppThemeModal({ open, onClose, onThemeApplied }) {
   );
 }
 
-function CustomThemeEditorModal({ draft, onChangeToken, onReset, onCancel, onSave }) {
+function CustomThemeEditorModal({ draft, onChangeToken, onReset, onCancel, onSave, hasChanges, isSaving }) {
   return (
     <div className="absolute inset-0 z-20 flex items-end justify-center p-2 sm:items-center sm:p-3" onClick={onCancel}>
       <div className="absolute inset-0 bg-black/65" />
@@ -259,76 +373,211 @@ function CustomThemeEditorModal({ draft, onChangeToken, onReset, onCancel, onSav
           </button>
         </div>
 
-        {/* Two Column Layout: Preview Left, Colors Right */}
+        {/* Two Column Layout: Previews Left, Colors Right */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
           
-          {/* Left: Phone Preview */}
-          <div className="flex items-center justify-center">
+          {/* Left: Two Phone Previews Side by Side */}
+          <div className="flex items-center justify-center gap-4">
+            
+            {/* Preview 1: Chat Conversation */}
             <div 
-              className="relative w-64 h-[480px] rounded-[2.5rem] border-8 p-3 shadow-2xl"
+              className="relative w-36 h-[280px] rounded-[1.5rem] border-4 p-2 shadow-xl"
               style={{ 
                 backgroundColor: draft.background,
                 borderColor: "#1a1a1a",
-                boxShadow: `0 25px 50px -12px ${draft.primary}30, 0 0 0 1px ${draft.surface}`
+                boxShadow: `0 20px 40px -10px ${draft.primary}30`
               }}
             >
               {/* Phone Notch */}
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-6 bg-black rounded-b-2xl z-10" />
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-4 bg-black rounded-b-xl z-10" />
               
               {/* Screen Content */}
-              <div className="w-full h-full rounded-[2rem] overflow-hidden flex flex-col" style={{ backgroundColor: draft.background }}>
-                {/* Header */}
-                <div className="px-4 pt-8 pb-3 flex items-center gap-3" style={{ backgroundColor: draft.surface }}>
+              <div className="w-full h-full rounded-[1rem] overflow-hidden flex flex-col" style={{ backgroundColor: draft.background }}>
+                {/* Chat Header */}
+                <div className="px-2 pt-5 pb-2 flex items-center gap-2" style={{ backgroundColor: draft.surface }}>
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: draft.text }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
                   <div 
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
-                    style={{ backgroundColor: draft.primary, color: draft.text }}
+                    className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold"
+                    style={{ backgroundColor: draft.accent, color: draft.background }}
                   >
-                    CF
+                    U
                   </div>
-                  <span className="text-sm font-semibold" style={{ color: draft.text }}>ChatFlow</span>
+                  <div className="flex-1">
+                    <p className="text-[8px] font-semibold" style={{ color: draft.text }}>newbie</p>
+                    <p className="text-[6px] opacity-70" style={{ color: draft.text }}>last seen recently</p>
+                  </div>
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: draft.text }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: draft.text }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
                 </div>
                 
-                {/* Chat Preview */}
-                <div className="flex-1 p-4 space-y-3">
-                  {/* Their message */}
-                  <div className="flex justify-start">
-                    <div 
-                      className="rounded-2xl rounded-tl-md px-3 py-2 max-w-[80%]"
-                      style={{ backgroundColor: draft.surface, color: draft.text }}
-                    >
-                      <p className="text-xs">Hey! How are you?</p>
-                    </div>
-                  </div>
+                {/* Date Label */}
+                <div className="flex justify-center py-2">
+                  <span className="text-[6px] px-2 py-0.5 rounded-full" style={{ backgroundColor: draft.surface, color: draft.text }}>
+                    Today
+                  </span>
+                </div>
+                
+                {/* Chat Messages */}
+                <div className="flex-1 px-2 space-y-1.5">
                   {/* My message */}
                   <div className="flex justify-end">
                     <div 
-                      className="rounded-2xl rounded-tr-md px-3 py-2 max-w-[80%]"
-                      style={{ backgroundColor: draft.primary, color: draft.text }}
+                      className="rounded-xl rounded-tr-sm px-2 py-1 max-w-[90%]"
+                      style={{ backgroundColor: draft.primary, color: draft.background }}
                     >
-                      <p className="text-xs">I'm great! Thanks 😊</p>
+                      <p className="text-[8px]">yoyoy</p>
                     </div>
                   </div>
-                  {/* Accent message */}
+                  {/* Call message */}
                   <div className="flex justify-end">
                     <div 
-                      className="rounded-2xl rounded-tr-md px-3 py-2 max-w-[80%]"
+                      className="rounded-xl rounded-tr-sm px-2 py-1 max-w-[90%]"
+                      style={{ backgroundColor: draft.primary, color: draft.background }}
+                    >
+                      <p className="text-[8px] flex items-center gap-1">
+                        <svg className="w-2 h-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                        </svg>
+                        Voice call ended · 8
+                      </p>
+                    </div>
+                  </div>
+                  {/* Another my message */}
+                  <div className="flex justify-end">
+                    <div 
+                      className="rounded-xl rounded-tr-sm px-2 py-1 max-w-[90%]"
+                      style={{ backgroundColor: draft.primary, color: draft.background }}
+                    >
+                      <p className="text-[8px]">oi</p>
+                    </div>
+                  </div>
+                  {/* Their message */}
+                  <div className="flex justify-start items-end gap-1">
+                    <div 
+                      className="w-4 h-4 rounded-full flex items-center justify-center text-[6px]"
                       style={{ backgroundColor: draft.accent, color: draft.background }}
                     >
-                      <p className="text-xs font-medium">Check this out!</p>
+                      U
+                    </div>
+                    <div 
+                      className="rounded-xl rounded-tl-sm px-2 py-1 max-w-[85%]"
+                      style={{ backgroundColor: draft.surface, color: draft.text }}
+                    >
+                      <p className="text-[8px]">Ki</p>
                     </div>
                   </div>
                 </div>
                 
                 {/* Input Bar */}
-                <div className="px-3 py-2 flex items-center gap-2" style={{ backgroundColor: draft.surface }}>
-                  <div className="flex-1 h-8 rounded-full" style={{ backgroundColor: draft.background }} />
+                <div className="px-2 py-2 flex items-center gap-1.5" style={{ backgroundColor: draft.surface }}>
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: draft.text }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                  </svg>
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: draft.text }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="flex-1 h-5 rounded-full text-[6px] flex items-center px-2" style={{ backgroundColor: draft.background, color: draft.textMuted || draft.text }}>
+                    Type a message...
+                  </div>
                   <div 
-                    className="w-8 h-8 rounded-full flex items-center justify-center"
-                    style={{ backgroundColor: draft.accent }}
+                    className="w-5 h-5 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: draft.primary }}
                   >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: draft.background }}>
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: draft.background }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                     </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Preview 2: Sidebar */}
+            <div 
+              className="relative w-36 h-[280px] rounded-[1.5rem] border-4 p-2 shadow-xl"
+              style={{ 
+                backgroundColor: draft.background,
+                borderColor: "#1a1a1a",
+                boxShadow: `0 20px 40px -10px ${draft.primary}30`
+              }}
+            >
+              {/* Phone Notch */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-4 bg-black rounded-b-xl z-10" />
+              
+              {/* Screen Content */}
+              <div className="w-full h-full rounded-[1rem] overflow-hidden flex flex-col" style={{ backgroundColor: draft.background }}>
+                {/* App Header */}
+                <div className="px-3 pt-5 pb-2 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-5 h-5 rounded-full flex items-center justify-center"
+                      style={{ backgroundColor: draft.primary }}
+                    >
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: draft.background }}>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                    </div>
+                    <span className="text-[10px] font-bold" style={{ color: draft.text }}>ChatFlow</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: draft.text }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: draft.text }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                    </svg>
+                    <div 
+                      className="w-4 h-4 rounded-full flex items-center justify-center text-[6px] font-bold"
+                      style={{ backgroundColor: draft.accent, color: draft.background }}
+                    >
+                      S
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Search Bar */}
+                <div className="px-3 pb-3">
+                  <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg" style={{ backgroundColor: draft.surface }}>
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: draft.textMuted || draft.text }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <span className="text-[7px]" style={{ color: draft.textMuted || draft.text }}>Search conversations...</span>
+                  </div>
+                </div>
+
+                {/* Section Label */}
+                <div className="px-3 pb-2">
+                  <span className="text-[7px] font-bold tracking-wider uppercase" style={{ color: draft.textMuted || draft.text, opacity: 0.7 }}>
+                    Messages
+                  </span>
+                </div>
+                
+                {/* Conversation List */}
+                <div className="flex-1 px-2 space-y-1">
+                  {/* Conversation Item */}
+                  <div className="flex items-center gap-2 px-2 py-2 rounded-lg" style={{ backgroundColor: draft.surface }}>
+                    <div 
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-[7px] font-bold"
+                      style={{ backgroundColor: draft.accent, color: draft.background }}
+                    >
+                      U
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[8px] font-semibold truncate" style={{ color: draft.text }}>newbie</p>
+                        <span className="text-[6px]" style={{ color: draft.textMuted || draft.text, opacity: 0.7 }}>02:15</span>
+                      </div>
+                      <p className="text-[7px] truncate" style={{ color: draft.textMuted || draft.text }}>Ki</p>
+                    </div>
+                    <div 
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{ backgroundColor: draft.primary }}
+                    />
                   </div>
                 </div>
               </div>
@@ -376,14 +625,15 @@ function CustomThemeEditorModal({ draft, onChangeToken, onReset, onCancel, onSav
                 <button
                   type="button"
                   onClick={onSave}
-                  className="px-6 py-2.5 rounded-xl text-sm font-semibold transition-all hover:scale-105 active:scale-95"
+                  disabled={!hasChanges || isSaving}
+                  className="px-6 py-2.5 rounded-xl text-sm font-semibold transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                   style={{
                     color: draft.background,
-                    backgroundColor: draft.accent,
-                    boxShadow: `0 4px 14px ${draft.accent}50`
+                    backgroundColor: hasChanges ? draft.accent : "color-mix(in srgb, var(--color-text) 30%, transparent)",
+                    boxShadow: hasChanges ? `0 4px 14px ${draft.accent}50` : "none",
                   }}
                 >
-                  Save Changes
+                  {isSaving ? "Saving..." : "Save Changes"}
                 </button>
               </div>
             </div>

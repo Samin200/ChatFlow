@@ -363,6 +363,31 @@ export function useChat(currentUser, chatIdFromRoute) {
 
       setStorageError(null);
 
+      // Create optimistic temp message with "sending" status for instant UI feedback
+      const tempId = `temp-${currentUser.id}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const tempMessage = {
+        id: tempId,
+        senderId: currentUser.id,
+        receiverId: activeContactId,
+        chatId: activeContactId,
+        text: text ?? "",
+        type,
+        imageData,
+        duration,
+        createdAt: new Date().toISOString(),
+        status: "sending",
+        reactions: {},
+        edited: false,
+        deleted: false,
+        deletedFor: [],
+        starredBy: [],
+        sender: currentUser,
+        _isTemp: true,
+      };
+
+      // Add temp message to UI immediately (shows clock icon)
+      setMessages((prev) => [...prev, tempMessage]);
+
       const sender =
         type === "voice"
           ? await sendVoiceMessage({ senderId: currentUser.id, receiverId: activeContactId, duration: duration ?? 0, voiceBlob })
@@ -379,12 +404,26 @@ export function useChat(currentUser, chatIdFromRoute) {
 
       if (!sender.success) {
         setStorageError(sender.error);
+        // Remove temp message on failure
+        setMessages((prev) => prev.filter((m) => m.id !== tempId));
+        return;
+      }
+
+      // Replace temp message with actual message from server
+      if (sender.message) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === tempId
+              ? { ...sender.message, status: sender.message.status || "sent" }
+              : m
+          )
+        );
       }
 
       const shouldRunBotFallback = !USE_BACKEND;
 
       if (sender.success && !SHOULD_USE_SOCKET && sender.message) {
-        setMessages((prev) => [...prev, sender.message]);
+        // Message already replaced above, don't add duplicate
       }
 
       if (sender.success && sender.message && !USE_BACKEND) {
