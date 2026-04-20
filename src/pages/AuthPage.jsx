@@ -80,8 +80,8 @@ export default function AuthPage({ mode: initialMode = "login" }) {
               <ChatFlowIcon className="h-14 w-14" />
               <div className="text-center">
                 <h1 className="text-2xl font-extrabold text-white tracking-tight">
-                  <span style={{ color: "var(--color-text)" }}>Kotha</span>
-                  <span style={{ color: "var(--color-accent)" }}>Bolbi</span>
+                  <span style={{ color: "var(--color-text)" }}>Chat</span>
+                  <span style={{ color: "var(--color-accent)" }}>Flow</span>
                 </h1>
                 <p className="text-sm mt-1" style={{ color: "var(--color-text-muted)" }}>
                   {mode === "login"
