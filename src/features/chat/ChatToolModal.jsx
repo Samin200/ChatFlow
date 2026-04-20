@@ -64,7 +64,7 @@ export default function ChatToolModal({
             />
           )}
           {panel.type === "chat_theme" && (
-            <ThemeBlock panel={panel} onChangeTheme={onChangeTheme} onToggleChatSide={onToggleChatSide} />
+            <ThemeBlock panel={panel} onChangeTheme={onChangeTheme} />
           )}
           {panel.type === "chat_sides" && (
             <ChatSidesBlock panel={panel} onUpdateChatSides={onUpdateChatSides} />
@@ -215,7 +215,7 @@ function GroupInfoBlock({ currentUser, panel, onAddMembersToGroup, onRemoveMembe
   );
 }
 
-function ThemeBlock({ panel, onChangeTheme, onToggleChatSide }) {
+function ThemeBlock({ panel, onChangeTheme }) {
   const appearance = panel.appearance ?? {};
   const midnight = BUILT_IN_THEMES[0];
   const defaultBackground = getThemeHex("--color-background", midnight.background);
@@ -305,9 +305,13 @@ function ThemeBlock({ panel, onChangeTheme, onToggleChatSide }) {
         {appearance.backgroundMode === "solid" && (
           <div className="rounded-lg border p-3" style={{ borderColor: "color-mix(in srgb, var(--color-text) 14%, transparent)", backgroundColor: "color-mix(in srgb, var(--color-surface) 85%, transparent)" }}>
             <label className="block text-sm mb-2" style={{ color: "var(--color-text)" }}>Background Color</label>
-            <div 
-              className="mb-2 w-full h-10 border border-white/15 rounded-md shadow-inner transition-colors duration-200" 
-              style={{ backgroundColor: appearance.solidColor ?? defaultBackground }}
+            <div
+              className="mb-2 w-full h-10 shadow-inner transition-colors duration-200"
+              style={{
+                backgroundColor: appearance.solidColor ?? defaultBackground,
+                borderRadius: "6px",
+                border: "1px solid rgba(255,255,255,0.15)",
+              }}
             />
             <input
               type="color"
@@ -329,9 +333,13 @@ function ThemeBlock({ panel, onChangeTheme, onToggleChatSide }) {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm mb-2" style={{ color: "var(--color-text)" }}>From</label>
-                <div 
-                  className="mb-2 w-full h-10 border border-white/15 rounded-md shadow-inner transition-colors duration-200" 
-                  style={{ backgroundColor: appearance.gradientFrom ?? defaultSurface }}
+                <div
+                  className="mb-2 w-full h-10 shadow-inner transition-colors duration-200"
+                  style={{
+                    backgroundColor: appearance.gradientFrom ?? defaultSurface,
+                    borderRadius: "6px",
+                    border: "1px solid rgba(255,255,255,0.15)",
+                  }}
                 />
                 <input
                   type="color"
@@ -348,9 +356,13 @@ function ThemeBlock({ panel, onChangeTheme, onToggleChatSide }) {
               </div>
               <div>
                 <label className="block text-sm mb-2" style={{ color: "var(--color-text)" }}>To</label>
-                <div 
-                  className="mb-2 w-full h-10 border border-white/15 rounded-md shadow-inner transition-colors duration-200" 
-                  style={{ backgroundColor: appearance.gradientTo ?? defaultSecondary }}
+                <div
+                  className="mb-2 w-full h-10 shadow-inner transition-colors duration-200"
+                  style={{
+                    backgroundColor: appearance.gradientTo ?? defaultSecondary,
+                    borderRadius: "6px",
+                    border: "1px solid rgba(255,255,255,0.15)",
+                  }}
                 />
                 <input
                   type="color"

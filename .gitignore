@@ -1,3 +1,4 @@
 .env
 single-file-chatflow-backend
 .vercel
+node_modules
