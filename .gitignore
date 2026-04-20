@@ -2,3 +2,5 @@
 single-file-chatflow-backend
 .vercel
 node_modules
+dist/
+.DS_Store

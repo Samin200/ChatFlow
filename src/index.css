@@ -253,40 +253,101 @@ button:active {
   display: none;
 }
 
-.kothaboli-brand-icon {
+.chatflow-brand-icon {
   filter: saturate(1.1) brightness(1.04) drop-shadow(0 0 10px color-mix(in srgb, var(--color-accent) 50%, transparent));
   transition: filter 220ms ease;
 }
 
-.kothaboli-icon-shell {
+.chatflow-icon-shell {
   transition: background-color 220ms ease, box-shadow 220ms ease;
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-text) 10%, transparent);
 }
 
-:root[data-theme="midnight-blue"] .kothaboli-brand-icon,
-:root[data-theme="custom"] .kothaboli-brand-icon {
+:root[data-theme="midnight-blue"] .chatflow-brand-icon,
+:root[data-theme="custom"] .chatflow-brand-icon {
   filter: saturate(1.1) brightness(1.04) hue-rotate(0deg) drop-shadow(0 0 10px color-mix(in srgb, var(--color-accent) 50%, transparent));
 }
 
-:root[data-theme="deep-purple"] .kothaboli-brand-icon {
+:root[data-theme="deep-purple"] .chatflow-brand-icon {
   filter: saturate(1.22) brightness(1.06) hue-rotate(68deg) drop-shadow(0 0 11px color-mix(in srgb, var(--color-accent) 54%, transparent));
 }
 
-:root[data-theme="sunset-orange"] .kothaboli-brand-icon {
+:root[data-theme="sunset-orange"] .chatflow-brand-icon {
   filter: saturate(1.35) brightness(1.04) hue-rotate(142deg) drop-shadow(0 0 12px color-mix(in srgb, var(--color-accent) 58%, transparent));
 }
 
-:root[data-theme="light"] .kothaboli-brand-icon {
+:root[data-theme="light"] .chatflow-brand-icon {
   filter: saturate(1.05) brightness(1.06) hue-rotate(168deg) drop-shadow(0 0 8px color-mix(in srgb, var(--color-accent) 45%, transparent));
 }
 
-:root[data-theme="light"] .kothaboli-icon-shell {
+:root[data-theme="light"] .chatflow-icon-shell {
   background-color: color-mix(in srgb, white 96%, var(--color-surface) 4%) !important;
   box-shadow:
     0 0 0 1px color-mix(in srgb, var(--color-text) 10%, transparent),
     0 8px 20px color-mix(in srgb, var(--color-accent) 10%, transparent);
 }
 
-:root[data-theme="dark-amoled"] .kothaboli-brand-icon {
+:root[data-theme="dark-amoled"] .chatflow-brand-icon {
   filter: saturate(1.16) brightness(1.08) hue-rotate(8deg) drop-shadow(0 0 12px color-mix(in srgb, var(--color-accent) 60%, transparent));
+}
+
+/* Theme-aware icon colors for ChatFlowIcon using CSS variables */
+:root {
+  --icon-gradient-start: #0ea5e9;
+  --icon-gradient-end: #6366f1;
+  --icon-stroke: #ffffff;
+  --icon-shadow: rgba(99, 102, 241, 0.3);
+}
+
+:root[data-theme="deep-purple"] {
+  --icon-gradient-start: #885CF6;
+  --icon-gradient-end: #A785FA;
+  --icon-stroke: #ffffff;
+  --icon-shadow: rgba(136, 92, 246, 0.4);
+}
+
+:root[data-theme="sunset-orange"] {
+  --icon-gradient-start: #F97235;
+  --icon-gradient-end: #FB923C;
+  --icon-stroke: #ffffff;
+  --icon-shadow: rgba(249, 114, 53, 0.4);
+}
+
+:root[data-theme="dark-amoled"] {
+  --icon-gradient-start: #10b981;
+  --icon-gradient-end: #34d399;
+  --icon-stroke: #000000;
+  --icon-shadow: rgba(16, 185, 129, 0.4);
+}
+
+:root[data-theme="light"] {
+  --icon-gradient-start: #2563eb;
+  --icon-gradient-end: #60a5fa;
+  --icon-stroke: #ffffff;
+  --icon-shadow: rgba(37, 99, 235, 0.3);
+}
+
+:root[data-theme="midnight-blue"] {
+  --icon-gradient-start: #0ea5e9;
+  --icon-gradient-end: #6366f1;
+  --icon-stroke: #ffffff;
+  --icon-shadow: rgba(99, 102, 241, 0.3);
+}
+
+/* Custom theme uses CSS variables directly - customize via appTheme.ts Custom theme */
+:root[data-theme="custom"] {
+  --icon-gradient-start: var(--color-primary);
+  --icon-gradient-end: var(--color-accent);
+  --icon-stroke: var(--color-background);
+  --icon-shadow: color-mix(in srgb, var(--color-accent) 40%, transparent);
+}
+
+/* Override ChatFlowIcon inline styles using CSS variables */
+.chatflow-icon-shell {
+  background: linear-gradient(135deg, var(--icon-gradient-start), var(--icon-gradient-end)) !important;
+  box-shadow: 0 4px 12px var(--icon-shadow) !important;
+}
+
+.chatflow-icon-shell svg {
+  color: var(--icon-stroke) !important;
 }
