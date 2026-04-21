@@ -20,6 +20,9 @@ import {
   CheckCircle2,
   Pencil,
   MessageCircle,
+  CornerUpLeft,
+  Flag,
+  ChevronRight,
 } from "lucide-react";
 import {
   formatMessageTime,
@@ -79,11 +82,31 @@ const MessageBubble = memo(function MessageBubble({
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0, above: false });
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [isPlayingVoice, setIsPlayingVoice] = useState(false);
+
+  // Swipe to reply state (mobile)
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [isSwiping, setIsSwiping] = useState(false);
+  const touchStartX = useRef(null);
+  const touchStartY = useRef(null);
+  const SWIPE_THRESHOLD = 60;
+  const SWIPE_MAX = 80;
+
+  // Mobile action sheet state
+  const [showMobileSheet, setShowMobileSheet] = useState(false);
+  const [showMobileEmojiPicker, setShowMobileEmojiPicker] = useState(false);
+
   const rootRef = useRef(null);
   const reactionPanelRef = useRef(null);
   const messageMenuRef = useRef(null);
   const longPressRef = useRef(null);
   const voiceTimerRef = useRef(null);
+
+  // Device detection
+  const isMobile = () => {
+    return window.matchMedia('(max-width: 768px)').matches
+      || 'ontouchstart' in window
+      || navigator.maxTouchPoints > 0;
+  };
 
   const totalReactions = Object.entries(message.reactions ?? {}).filter(([, users]) => users.length > 0);
   const activeReactionUsers = message.reactions?.[activeReactionEmoji] ?? [];
@@ -108,29 +131,75 @@ const MessageBubble = memo(function MessageBubble({
     setActiveReactionEmoji(null);
   }
 
-  function handleLongPressStart() {
+  function handleLongPressStart(e) {
+    // Don't trigger long press if swiping
+    if (isSwiping || swipeOffset > 10) return;
+
     clearTimeout(longPressRef.current);
     longPressRef.current = setTimeout(() => {
-      // On mobile, open the hover menu instead of the old action sheet
-      if (isTouchDevice && rootRef.current) {
-        const rect = rootRef.current.getBoundingClientRect();
-        const spaceBelow = window.innerHeight - rect.bottom;
-        const menuHeight = 320;
-        const showAbove = spaceBelow < menuHeight;
-        setMenuPosition({
-          x: rect.left + rect.width / 2,
-          y: showAbove ? rect.top : rect.bottom,
-          above: showAbove,
-        });
-        setShowHoverMenu(true);
-      } else {
-        setShowActions(true);
+      // On mobile, show bottom action sheet
+      if (isMobile() && !message.deleted) {
+        navigator.vibrate?.(50);
+        setShowMobileSheet(true);
       }
     }, 500);
   }
 
   function handleLongPressEnd() {
     clearTimeout(longPressRef.current);
+  }
+
+  // Swipe to reply handlers (mobile only)
+  function handleTouchStart(e) {
+    if (!isMobile()) return;
+    const touch = e.touches[0];
+    touchStartX.current = touch.clientX;
+    touchStartY.current = touch.clientY;
+    setIsSwiping(false);
+    handleLongPressStart(e);
+  }
+
+  function handleTouchMove(e) {
+    if (!isMobile() || touchStartX.current === null) return;
+
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - touchStartX.current;
+    const deltaY = touch.clientY - touchStartY.current;
+
+    // Check if horizontal swipe (more horizontal than vertical)
+    if (Math.abs(deltaX) > Math.abs(deltaY) * 1.5 && deltaX > 0) {
+      // It's a right swipe - prevent scroll
+      e.preventDefault();
+      setIsSwiping(true);
+      clearTimeout(longPressRef.current); // Cancel long press
+
+      const offset = Math.min(deltaX, SWIPE_MAX);
+      setSwipeOffset(offset);
+    } else if (Math.abs(deltaY) > 10) {
+      // It's a scroll - cancel long press and swipe
+      clearTimeout(longPressRef.current);
+      if (swipeOffset > 0) {
+        setSwipeOffset(0);
+      }
+    }
+  }
+
+  function handleTouchEnd() {
+    if (!isMobile()) return;
+
+    if (swipeOffset >= SWIPE_THRESHOLD) {
+      // Trigger reply
+      navigator.vibrate?.(50);
+      // TODO: Trigger reply action - need to pass onReply prop
+      // For now, just animate back
+    }
+
+    // Animate back to 0
+    setSwipeOffset(0);
+    setIsSwiping(false);
+    touchStartX.current = null;
+    touchStartY.current = null;
+    handleLongPressEnd();
   }
 
   const audioRef = useRef(null);
@@ -189,9 +258,11 @@ const MessageBubble = memo(function MessageBubble({
         setActiveReactionEmoji(null);
         setShowMessageMenu(false);
         setShowHoverMenu(false);
+        setShowMobileSheet(false);
+        setShowMobileEmojiPicker(false);
       }
     }
-    if (showReactions || showMessageMenu || showHoverMenu) {
+    if (showReactions || showMessageMenu || showHoverMenu || showMobileSheet || showMobileEmojiPicker) {
       window.addEventListener("pointerdown", handleOutside);
     }
     return () => {
@@ -199,7 +270,7 @@ const MessageBubble = memo(function MessageBubble({
       clearTimeout(longPressRef.current);
       clearTimeout(voiceTimerRef.current);
     };
-  }, [showMessageMenu, showReactions, showHoverMenu]);
+  }, [showMessageMenu, showReactions, showHoverMenu, showMobileSheet, showMobileEmojiPicker]);
 
   useEffect(() => {
     if (!activeReactionEmoji) return undefined;
@@ -271,9 +342,9 @@ const MessageBubble = memo(function MessageBubble({
       }`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      onTouchStart={handleLongPressStart}
-      onTouchEnd={handleLongPressEnd}
-      onTouchMove={handleLongPressEnd}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchMove={handleTouchMove}
     >
       {(!isMine || showMyAvatarInChat) && (
         <div className={`flex-shrink-0 mb-0.5 w-7 md:w-8 ${avatarOrderClass}`}>
@@ -291,15 +362,33 @@ const MessageBubble = memo(function MessageBubble({
 
         <div className={`flex flex-col gap-0.5 md:gap-1 max-w-[88%] md:max-w-[80%] ${bubbleAlignClass} ${contentOrderClass}`}>
         <div className="relative">
-          <button
-            onClick={() => setShowReactions((s) => !s)}
-            className={`absolute top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-10 p-1 rounded-full bg-slate-700/80 hover:bg-slate-600/80 text-slate-300 text-xs ${
-              isRightSide ? "-left-8" : "-right-8"
-            }`}
-            aria-label="React to message"
-          >
-            <SmilePlus className="w-3.5 h-3.5" />
-          </button>
+          {/* Desktop hover reaction button - hidden on mobile */}
+          {!isMobile() && (
+            <button
+              onClick={() => setShowReactions((s) => !s)}
+              className={`absolute top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-10 p-1 rounded-full bg-slate-700/80 hover:bg-slate-600/80 text-slate-300 text-xs ${
+                isRightSide ? "-left-8" : "-right-8"
+              }`}
+              aria-label="React to message"
+            >
+              <SmilePlus className="w-3.5 h-3.5" />
+            </button>
+          )}
+
+          {/* Swipe to reply icon (mobile) */}
+          {isMobile() && swipeOffset > 0 && (
+            <div
+              className="absolute top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-7 h-7 rounded-full"
+              style={{
+                left: "-36px",
+                backgroundColor: "rgba(255,255,255,0.15)",
+                opacity: Math.min(swipeOffset / SWIPE_THRESHOLD, 1),
+                transform: `translateX(${Math.min(swipeOffset * 0.3, 10)}px)`,
+              }}
+            >
+              <CornerUpLeft className="w-4 h-4 text-white" />
+            </div>
+          )}
 
           {showReactions && (
             <div
@@ -384,12 +473,14 @@ const MessageBubble = memo(function MessageBubble({
           )}
 
           <div
-            className={`relative rounded-[22px] px-4 py-2 text-[15px] leading-tight transition-all duration-250 text-slate-100 shadow-sm border border-white/5 ${
+            className={`relative rounded-[22px] px-4 py-2 text-[15px] leading-tight transition-all text-slate-100 shadow-sm border border-white/5 ${
               isRightSide ? "rounded-tr-sm" : "rounded-tl-sm"
             }`}
-            style={{ 
+            style={{
               backgroundColor: isMine ? mineBubbleColor : theirBubbleColor,
-              minWidth: 'fit-content'
+              minWidth: 'fit-content',
+              transform: `translateX(${swipeOffset}px)`,
+              transition: isSwiping ? 'none' : 'transform 0.2s ease-out',
             }}
           >
             <span className="absolute w-2 h-2 rotate-45 rounded-[0.5px]" style={tailStyle} />
@@ -552,8 +643,8 @@ const MessageBubble = memo(function MessageBubble({
             </>
           )}
 
-          {/* Hover Chevron Button */}
-          {(isHovered || showHoverMenu) && !message.deleted && (
+          {/* Desktop Hover Chevron Button - hidden on mobile */}
+          {!isMobile() && (isHovered || showHoverMenu) && !message.deleted && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -726,9 +817,228 @@ const MessageBubble = memo(function MessageBubble({
           </div>
         </div>
       )}
+
+      {/* Mobile Action Sheet (WhatsApp-style) */}
+      {showMobileSheet && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-[200] bg-black/60 animate-fade-in"
+            onClick={() => setShowMobileSheet(false)}
+          />
+
+          {/* Sheet */}
+          <div
+            className="fixed inset-x-0 bottom-0 z-[210] rounded-t-[20px] overflow-hidden animate-sheet-up"
+            style={{
+              backgroundColor: "color-mix(in srgb, var(--color-surface) 95%, black 5%)",
+              boxShadow: "0 -4px 20px rgba(0,0,0,0.4)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Handle bar */}
+            <div className="w-full flex justify-center pt-2 pb-1">
+              <div className="w-12 h-1 rounded-full bg-white/30" />
+            </div>
+
+            {/* Message Preview */}
+            <div className="px-4 py-3 border-b border-white/10">
+              <div
+                className="rounded-xl px-3 py-2 text-sm truncate"
+                style={{ backgroundColor: "color-mix(in srgb, var(--color-background) 80%, transparent)" }}
+              >
+                {message.deleted ? (
+                  <span className="italic opacity-50">This message was deleted</span>
+                ) : message.type === "image" ? (
+                  <span>📷 Image</span>
+                ) : message.text ? (
+                  <span className="text-slate-200">{message.text.slice(0, 100)}{message.text.length > 100 ? "..." : ""}</span>
+                ) : (
+                  <span className="italic opacity-50">Voice message</span>
+                )}
+              </div>
+            </div>
+
+            {/* Quick Emoji Reactions */}
+            {!message.deleted && (
+              <div className="px-4 py-3 border-b border-white/10">
+                <div className="flex items-center justify-between gap-2">
+                  {["👍", "❤️", "😂", "😮", "😢", "🙏"].map((emoji) => (
+                    <button
+                      key={emoji}
+                      onClick={() => {
+                        handleReact(emoji);
+                        setShowMobileSheet(false);
+                      }}
+                      className="w-11 h-11 flex items-center justify-center text-2xl rounded-full hover:bg-white/10 transition-colors"
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setShowMobileEmojiPicker(true)}
+                    className="w-11 h-11 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                  >
+                    <Plus className="w-5 h-5 text-slate-300" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Action List */}
+            <div className="py-2">
+              {/* Common Actions */}
+              <SheetActionItem
+                icon={CornerUpLeft}
+                label="Reply"
+                onClick={() => {
+                  // TODO: Trigger reply
+                  setShowMobileSheet(false);
+                }}
+              />
+              {!message.deleted && (
+                <SheetActionItem
+                  icon={Copy}
+                  label="Copy"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(String(message.text ?? ""));
+                    } catch {
+                      // ignore
+                    }
+                    setShowMobileSheet(false);
+                  }}
+                />
+              )}
+              <SheetActionItem
+                icon={Forward}
+                label="Forward"
+                onClick={() => {
+                  // TODO: Show "Coming soon" toast
+                  setShowMobileSheet(false);
+                }}
+              />
+              <SheetActionItem
+                icon={Star}
+                label="Star"
+                onClick={() => {
+                  onToggleStar?.(message.id);
+                  setShowMobileSheet(false);
+                }}
+              />
+              <SheetActionItem
+                icon={Pin}
+                label="Pin"
+                onClick={() => {
+                  // TODO: Show "Coming soon" toast
+                  setShowMobileSheet(false);
+                }}
+              />
+
+              {/* Received-only actions */}
+              {!isMine && isGroupChat && (
+                <>
+                  <div className="h-px bg-white/10 my-1 mx-4" />
+                  <SheetActionItem
+                    icon={Flag}
+                    label="Report"
+                    danger
+                    onClick={() => {
+                      // TODO: Show "Message reported" toast
+                      setShowMobileSheet(false);
+                    }}
+                  />
+                </>
+              )}
+
+              {/* Sent-only actions */}
+              {isMine && !message.deleted && (
+                <>
+                  <div className="h-px bg-white/10 my-1 mx-4" />
+                  <SheetActionItem
+                    icon={Pencil}
+                    label="Edit"
+                    onClick={() => {
+                      onEdit?.(message);
+                      setShowMobileSheet(false);
+                    }}
+                  />
+                </>
+              )}
+
+              {/* Delete - for everyone */}
+              <div className="h-px bg-white/10 my-1 mx-4" />
+              <SheetActionItem
+                icon={Trash2}
+                label="Delete"
+                danger
+                onClick={() => {
+                  onDelete?.(message.id, isMine ? "everyone" : "me");
+                  setShowMobileSheet(false);
+                }}
+              />
+            </div>
+
+            {/* Safe area padding for iOS */}
+            <div className="h-[env(safe-area-inset-bottom)]" />
+          </div>
+        </>
+      )}
+
+      {/* Mobile Emoji Picker Modal */}
+      {showMobileEmojiPicker && (
+        <div className="fixed inset-0 z-[220] flex items-end" onClick={() => setShowMobileEmojiPicker(false)}>
+          <div className="absolute inset-0 bg-black/60" />
+          <div
+            className="relative w-full h-[70vh] rounded-t-[20px] overflow-hidden animate-sheet-up"
+            style={{ backgroundColor: "color-mix(in srgb, var(--color-surface) 95%, black 5%)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+              <span className="text-base font-medium">Add Reaction</span>
+              <button onClick={() => setShowMobileEmojiPicker(false)} className="p-2 rounded-full hover:bg-white/10">
+                <ChevronDown className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="h-[calc(70vh-60px)]">
+              <EmojiPicker
+                open
+                theme="dark"
+                width="100%"
+                height="100%"
+                lazyLoadEmojis
+                searchPlaceHolder="Search emoji"
+                skinTonesDisabled
+                onEmojiClick={(emojiData) => {
+                  handleReact(emojiData.emoji);
+                  setShowMobileEmojiPicker(false);
+                  setShowMobileSheet(false);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 });
+
+function SheetActionItem({ icon: Icon, label, onClick, danger = false }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full px-4 py-3.5 flex items-center justify-between transition-colors ${
+        danger ? "text-rose-400" : "text-slate-200"
+      } active:bg-white/5`}
+    >
+      <div className="flex items-center gap-3">
+        <Icon className={`w-5 h-5 ${danger ? "text-rose-400" : "text-slate-400"}`} />
+        <span className="text-base">{label}</span>
+      </div>
+      <ChevronRight className={`w-5 h-5 ${danger ? "text-rose-400/50" : "text-slate-500"}`} />
+    </button>
+  );
+}
 
 function StatusTicks({ status, compact = false, seenColor = "#38bdf8" }) {
   const clockClass = compact ? "w-2.5 h-2.5 text-white/70" : "w-3 h-3 text-white/70";
