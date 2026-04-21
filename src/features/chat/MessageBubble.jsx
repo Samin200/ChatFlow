@@ -93,7 +93,6 @@ const MessageBubble = memo(function MessageBubble({
 
   // Mobile action sheet state
   const [showMobileSheet, setShowMobileSheet] = useState(false);
-  const [showMobileEmojiPicker, setShowMobileEmojiPicker] = useState(false);
 
   const rootRef = useRef(null);
   const reactionPanelRef = useRef(null);
@@ -345,7 +344,25 @@ const MessageBubble = memo(function MessageBubble({
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onTouchMove={handleTouchMove}
+      style={{
+        transform: isMobile() ? `translateX(${swipeOffset}px)` : undefined,
+        transition: isMobile() && !isSwiping ? 'transform 0.2s ease-out' : undefined,
+      }}
     >
+      {/* Swipe reply icon - outside the moving row */}
+      {isMobile() && swipeOffset > 0 && (
+        <div
+          className="absolute top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-7 h-7 rounded-full"
+          style={{
+            left: "-44px",
+            backgroundColor: "rgba(255,255,255,0.15)",
+            opacity: Math.min(swipeOffset / SWIPE_THRESHOLD, 1),
+          }}
+        >
+          <CornerUpLeft className="w-4 h-4 text-white" />
+        </div>
+      )}
+
       {(!isMine || showMyAvatarInChat) && (
         <div className={`flex-shrink-0 mb-0.5 w-7 md:w-8 ${avatarOrderClass}`}>
           {showAvatar ? (
@@ -362,32 +379,32 @@ const MessageBubble = memo(function MessageBubble({
 
         <div className={`flex flex-col gap-0.5 md:gap-1 max-w-[88%] md:max-w-[80%] ${bubbleAlignClass} ${contentOrderClass}`}>
         <div className="relative">
-          {/* Desktop hover reaction button - hidden on mobile */}
-          {!isMobile() && (
+          {/* Desktop hover chevron - positioned ON the bubble */}
+          {!isMobile() && (isHovered || showHoverMenu) && !message.deleted && (
             <button
-              onClick={() => setShowReactions((s) => !s)}
-              className={`absolute top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-10 p-1 rounded-full bg-slate-700/80 hover:bg-slate-600/80 text-slate-300 text-xs ${
-                isRightSide ? "-left-8" : "-right-8"
-              }`}
-              aria-label="React to message"
-            >
-              <SmilePlus className="w-3.5 h-3.5" />
-            </button>
-          )}
-
-          {/* Swipe to reply icon (mobile) */}
-          {isMobile() && swipeOffset > 0 && (
-            <div
-              className="absolute top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-7 h-7 rounded-full"
-              style={{
-                left: "-36px",
-                backgroundColor: "rgba(255,255,255,0.15)",
-                opacity: Math.min(swipeOffset / SWIPE_THRESHOLD, 1),
-                transform: `translateX(${Math.min(swipeOffset * 0.3, 10)}px)`,
+              onClick={(e) => {
+                e.stopPropagation();
+                const rect = e.currentTarget.getBoundingClientRect();
+                const spaceBelow = window.innerHeight - rect.bottom;
+                const menuHeight = 320;
+                const showAbove = spaceBelow < menuHeight;
+                setMenuPosition({
+                  x: rect.left,
+                  y: showAbove ? rect.top : rect.bottom,
+                  above: showAbove,
+                });
+                setShowHoverMenu(true);
               }}
+              className={`absolute top-1 z-30 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 ${
+                isRightSide ? "right-1" : "left-1"
+              }`}
+              style={{
+                backgroundColor: "rgba(0,0,0,0.3)",
+              }}
+              aria-label="Message options"
             >
-              <CornerUpLeft className="w-4 h-4 text-white" />
-            </div>
+              <ChevronDown className="w-4 h-4 text-white/80" />
+            </button>
           )}
 
           {showReactions && (
@@ -479,8 +496,6 @@ const MessageBubble = memo(function MessageBubble({
             style={{
               backgroundColor: isMine ? mineBubbleColor : theirBubbleColor,
               minWidth: 'fit-content',
-              transform: `translateX(${swipeOffset}px)`,
-              transition: isSwiping ? 'none' : 'transform 0.2s ease-out',
             }}
           >
             <span className="absolute w-2 h-2 rotate-45 rounded-[0.5px]" style={tailStyle} />
@@ -643,38 +658,7 @@ const MessageBubble = memo(function MessageBubble({
             </>
           )}
 
-          {/* Desktop Hover Chevron Button - hidden on mobile */}
-          {!isMobile() && (isHovered || showHoverMenu) && !message.deleted && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                const rect = e.currentTarget.getBoundingClientRect();
-                const spaceBelow = window.innerHeight - rect.bottom;
-                const menuHeight = 320;
-                const showAbove = spaceBelow < menuHeight;
-                setMenuPosition({
-                  x: rect.left,
-                  y: showAbove ? rect.top : rect.bottom,
-                  above: showAbove,
-                });
-                setShowHoverMenu(true);
-              }}
-              className={`absolute top-1 z-20 p-1.5 rounded-full transition-all duration-200 ${
-                isRightSide
-                  ? "-left-10"
-                  : "-right-10"
-              }`}
-              style={{
-                backgroundColor: "color-mix(in srgb, var(--color-surface) 80%, black 20%)",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
-              }}
-              aria-label="Message options"
-            >
-              <ChevronDown className="w-4 h-4" style={{ color: "var(--color-text)" }} />
-            </button>
-          )}
-
-          {/* Hover Dropdown Menu */}
+          {/* Hover Dropdown Menu (Desktop) */}
           {showHoverMenu && (
             <>
               <div
@@ -807,88 +791,114 @@ const MessageBubble = memo(function MessageBubble({
 
       </div>
 
-      {showActions && (
-        <div className="fixed inset-x-0 bottom-0 z-40 p-3 md:hidden" onClick={() => setShowActions(false)}>
-          <div className="rounded-2xl bg-slate-900/95 border border-white/10 p-2 animate-sheet-up" onClick={(e) => e.stopPropagation()}>
-            {!message.deleted && isMine && <ActionButton label="Edit" onClick={() => onEdit?.(message)} />}
-            <ActionButton label="Delete for me" onClick={() => onDelete?.(message.id, "me")} />
-            {isMine && <ActionButton label="Delete for everyone" onClick={() => onDelete?.(message.id, "everyone")} />}
-            <ActionButton label="Close" onClick={() => setShowActions(false)} />
-          </div>
-        </div>
-      )}
-
-      {/* Mobile Action Sheet (WhatsApp-style) */}
+      {/* Mobile Action Sheet (Image 3 Style) */}
       {showMobileSheet && (
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 z-[200] bg-black/60 animate-fade-in"
+            className="fixed inset-0 z-[200] bg-black/50"
+            style={{ animation: 'fadeIn 0.2s ease-out' }}
             onClick={() => setShowMobileSheet(false)}
           />
 
           {/* Sheet */}
           <div
-            className="fixed inset-x-0 bottom-0 z-[210] rounded-t-[20px] overflow-hidden animate-sheet-up"
+            className="fixed inset-x-0 bottom-0 z-[210] overflow-hidden"
             style={{
-              backgroundColor: "color-mix(in srgb, var(--color-surface) 95%, black 5%)",
-              boxShadow: "0 -4px 20px rgba(0,0,0,0.4)",
+              backgroundColor: 'rgba(18, 20, 28, 0.98)',
+              borderRadius: '20px 20px 0 0',
+              boxShadow: '0 -4px 20px rgba(0,0,0,0.4)',
+              animation: 'slideUp 0.25s ease-out',
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Handle bar */}
-            <div className="w-full flex justify-center pt-2 pb-1">
-              <div className="w-12 h-1 rounded-full bg-white/30" />
+            {/* Drag Handle */}
+            <div className="w-full flex justify-center pt-2 pb-1" style={{ height: '20px' }}>
+              <div
+                className="rounded-full"
+                style={{ width: '36px', height: '4px', backgroundColor: 'rgba(255,255,255,0.3)' }}
+              />
             </div>
 
-            {/* Message Preview */}
-            <div className="px-4 py-3 border-b border-white/10">
+            {/* Message Preview - styled like received message */}
+            <div className="px-5 py-3">
               <div
-                className="rounded-xl px-3 py-2 text-sm truncate"
-                style={{ backgroundColor: "color-mix(in srgb, var(--color-background) 80%, transparent)" }}
+                className="rounded-2xl px-4 py-3 text-sm"
+                style={{
+                  backgroundColor: 'var(--color-surface)',
+                  maxHeight: '80px',
+                  overflow: 'hidden',
+                }}
               >
                 {message.deleted ? (
-                  <span className="italic opacity-50">This message was deleted</span>
+                  <span style={{ fontStyle: 'italic', opacity: 0.5 }}>This message was deleted</span>
                 ) : message.type === "image" ? (
                   <span>📷 Image</span>
                 ) : message.text ? (
-                  <span className="text-slate-200">{message.text.slice(0, 100)}{message.text.length > 100 ? "..." : ""}</span>
+                  <span style={{ color: 'var(--color-text)' }}>{message.text.slice(0, 150)}{message.text.length > 150 ? "..." : ""}</span>
                 ) : (
-                  <span className="italic opacity-50">Voice message</span>
+                  <span style={{ fontStyle: 'italic', opacity: 0.5 }}>Voice message</span>
                 )}
               </div>
             </div>
 
-            {/* Quick Emoji Reactions */}
+            {/* Quick Emoji Reactions - Desktop Style (Swipeable) */}
             {!message.deleted && (
-              <div className="px-4 py-3 border-b border-white/10">
-                <div className="flex items-center justify-between gap-2">
-                  {["👍", "❤️", "😂", "😮", "😢", "🙏"].map((emoji) => (
-                    <button
-                      key={emoji}
-                      onClick={() => {
-                        handleReact(emoji);
-                        setShowMobileSheet(false);
-                      }}
-                      className="w-11 h-11 flex items-center justify-center text-2xl rounded-full hover:bg-white/10 transition-colors"
-                    >
-                      {emoji}
-                    </button>
-                  ))}
+              <div className="px-5 py-3 border-b" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+                <div
+                  className="flex items-center gap-2 rounded-2xl p-2"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
+                >
+                  {/* Scrollable emoji row - same as desktop */}
+                  <div className="min-w-0 flex-1 overflow-x-auto no-scrollbar">
+                    <div className="inline-flex items-center gap-1">
+                      {SWIPE_REACTION_PAGES.map((page, pageIndex) => (
+                        <div key={`mobile-page-${pageIndex}`} className="flex items-center gap-1">
+                          {page.map((emoji) => (
+                            <button
+                              key={`mobile-${pageIndex}-${emoji}`}
+                              onClick={() => {
+                                handleReact(emoji);
+                                setShowMobileSheet(false);
+                              }}
+                              className="h-10 w-10 rounded-full text-xl leading-none flex items-center justify-center transition-colors"
+                              style={{ backgroundColor: 'transparent' }}
+                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.12)'}
+                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                              aria-label={emoji}
+                            >
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Plus button for more reactions */}
                   <button
-                    onClick={() => setShowMobileEmojiPicker(true)}
-                    className="w-11 h-11 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                    onClick={() => {
+                      setShowMobileSheet(false);
+                      setShowEmojiModal(true);
+                    }}
+                    className="h-10 w-10 shrink-0 rounded-full flex items-center justify-center transition-colors"
+                    style={{
+                      backgroundColor: 'rgba(255,255,255,0.1)',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.2)'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
+                    aria-label="More reactions"
                   >
-                    <Plus className="w-5 h-5 text-slate-300" />
+                    <Plus className="w-5 h-5" style={{ color: 'var(--color-text-secondary)' }} />
                   </button>
                 </div>
               </div>
             )}
 
             {/* Action List */}
-            <div className="py-2">
-              {/* Common Actions */}
-              <SheetActionItem
+            <div>
+              {/* Reply */}
+              <MobileSheetActionItem
                 icon={CornerUpLeft}
                 label="Reply"
                 onClick={() => {
@@ -896,8 +906,10 @@ const MessageBubble = memo(function MessageBubble({
                   setShowMobileSheet(false);
                 }}
               />
-              {!message.deleted && (
-                <SheetActionItem
+
+              {/* Copy - only for text/image with text */}
+              {!message.deleted && message.text && (
+                <MobileSheetActionItem
                   icon={Copy}
                   label="Copy"
                   onClick={async () => {
@@ -910,7 +922,9 @@ const MessageBubble = memo(function MessageBubble({
                   }}
                 />
               )}
-              <SheetActionItem
+
+              {/* Forward */}
+              <MobileSheetActionItem
                 icon={Forward}
                 label="Forward"
                 onClick={() => {
@@ -918,7 +932,9 @@ const MessageBubble = memo(function MessageBubble({
                   setShowMobileSheet(false);
                 }}
               />
-              <SheetActionItem
+
+              {/* Star */}
+              <MobileSheetActionItem
                 icon={Star}
                 label="Star"
                 onClick={() => {
@@ -926,7 +942,9 @@ const MessageBubble = memo(function MessageBubble({
                   setShowMobileSheet(false);
                 }}
               />
-              <SheetActionItem
+
+              {/* Pin */}
+              <MobileSheetActionItem
                 icon={Pin}
                 label="Pin"
                 onClick={() => {
@@ -935,40 +953,23 @@ const MessageBubble = memo(function MessageBubble({
                 }}
               />
 
-              {/* Received-only actions */}
-              {!isMine && isGroupChat && (
-                <>
-                  <div className="h-px bg-white/10 my-1 mx-4" />
-                  <SheetActionItem
-                    icon={Flag}
-                    label="Report"
-                    danger
-                    onClick={() => {
-                      // TODO: Show "Message reported" toast
-                      setShowMobileSheet(false);
-                    }}
-                  />
-                </>
-              )}
+              {/* Divider */}
+              <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.08)' }} />
 
-              {/* Sent-only actions */}
+              {/* Edit - only for sent messages */}
               {isMine && !message.deleted && (
-                <>
-                  <div className="h-px bg-white/10 my-1 mx-4" />
-                  <SheetActionItem
-                    icon={Pencil}
-                    label="Edit"
-                    onClick={() => {
-                      onEdit?.(message);
-                      setShowMobileSheet(false);
-                    }}
-                  />
-                </>
+                <MobileSheetActionItem
+                  icon={Pencil}
+                  label="Edit"
+                  onClick={() => {
+                    onEdit?.(message);
+                    setShowMobileSheet(false);
+                  }}
+                />
               )}
 
-              {/* Delete - for everyone */}
-              <div className="h-px bg-white/10 my-1 mx-4" />
-              <SheetActionItem
+              {/* Delete - for all messages */}
+              <MobileSheetActionItem
                 icon={Trash2}
                 label="Delete"
                 danger
@@ -977,51 +978,69 @@ const MessageBubble = memo(function MessageBubble({
                   setShowMobileSheet(false);
                 }}
               />
+
+              {/* Report - only for received messages */}
+              {!isMine && (
+                <>
+                  <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.08)' }} />
+                  <MobileSheetActionItem
+                    icon={Flag}
+                    label="Report"
+                    onClick={() => {
+                      // TODO: Show "Message reported" toast
+                      setShowMobileSheet(false);
+                    }}
+                  />
+                </>
+              )}
             </div>
 
             {/* Safe area padding for iOS */}
-            <div className="h-[env(safe-area-inset-bottom)]" />
+            <div style={{ height: 'env(safe-area-inset-bottom)' }} />
           </div>
-        </>
-      )}
 
-      {/* Mobile Emoji Picker Modal */}
-      {showMobileEmojiPicker && (
-        <div className="fixed inset-0 z-[220] flex items-end" onClick={() => setShowMobileEmojiPicker(false)}>
-          <div className="absolute inset-0 bg-black/60" />
-          <div
-            className="relative w-full h-[70vh] rounded-t-[20px] overflow-hidden animate-sheet-up"
-            style={{ backgroundColor: "color-mix(in srgb, var(--color-surface) 95%, black 5%)" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-              <span className="text-base font-medium">Add Reaction</span>
-              <button onClick={() => setShowMobileEmojiPicker(false)} className="p-2 rounded-full hover:bg-white/10">
-                <ChevronDown className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="h-[calc(70vh-60px)]">
-              <EmojiPicker
-                open
-                theme="dark"
-                width="100%"
-                height="100%"
-                lazyLoadEmojis
-                searchPlaceHolder="Search emoji"
-                skinTonesDisabled
-                onEmojiClick={(emojiData) => {
-                  handleReact(emojiData.emoji);
-                  setShowMobileEmojiPicker(false);
-                  setShowMobileSheet(false);
-                }}
-              />
-            </div>
-          </div>
-        </div>
+          {/* Animation styles */}
+          <style>{`
+            @keyframes fadeIn {
+              from { opacity: 0; }
+              to { opacity: 1; }
+            }
+            @keyframes slideUp {
+              from { transform: translateY(100%); }
+              to { transform: translateY(0); }
+            }
+          `}</style>
+        </>
       )}
     </div>
   );
 });
+
+function MobileSheetActionItem({ icon: Icon, label, onClick, danger = false }) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full flex items-center justify-between transition-colors active:bg-white/5"
+      style={{
+        height: '56px',
+        padding: '0 20px',
+        color: danger ? '#FF3B30' : 'var(--color-text)',
+      }}
+    >
+      <div className="flex items-center gap-3">
+        <Icon
+          className="w-[22px] h-[22px]"
+          style={{ color: danger ? '#FF3B30' : 'var(--color-text-secondary)' }}
+        />
+        <span style={{ fontSize: '16px', fontWeight: 400 }}>{label}</span>
+      </div>
+      <ChevronRight
+        className="w-5 h-5"
+        style={{ color: danger ? 'rgba(255,59,48,0.5)' : 'var(--color-text-muted)' }}
+      />
+    </button>
+  );
+}
 
 function SheetActionItem({ icon: Icon, label, onClick, danger = false }) {
   return (

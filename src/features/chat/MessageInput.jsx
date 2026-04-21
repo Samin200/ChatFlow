@@ -11,7 +11,6 @@ import {
   Type,
   PenLine, RotateCcw,
   X,
-  Loader2,
 } from "lucide-react";
 import {
   validateImageFile,
@@ -46,7 +45,6 @@ export default function MessageInput({
   const [pickerSearch, setPickerSearch] = useState("");
   const [imageError, setImageError] = useState(null);
   const [pendingImage, setPendingImage] = useState(null);
-  const [isSending, setIsSending] = useState(false);
 
   const previewCanvasRef = useRef(null);
   const [originalPreviewDataUrl, setOriginalPreviewDataUrl] = useState(null);
@@ -67,7 +65,7 @@ export default function MessageInput({
   const [mentionQuery, setMentionQuery] = useState("");
   const [mentionSelectionIdx, setMentionSelectionIdx] = useState(0);
 
-  const canSend = (text.trim().length > 0 || pendingImage) && !disabled && !isSending;
+  const canSend = (text.trim().length > 0 || pendingImage) && !disabled;
 
   const getThemeCssColor = useCallback((token, fallback) => {
     if (typeof window === "undefined") return fallback;
@@ -141,40 +139,30 @@ export default function MessageInput({
     }
     onTypingStop?.();
 
-    setIsSending(true);
-    try {
-      if (pendingImage) {
-        await onSend({
-          text: text.trim(),
-          type: "image",
-          imageData: previewSource || pendingImage.dataUrl,
-          imageFile: pendingImage.file,
-          mentions: extractMentions(text),
-        });
-        setPendingImage(null);
-        setOriginalPreviewDataUrl(null);
-        setEditedDataUrl(null);
-      } else {
-        await onSend({ text: text.trim(), type: "text", imageData: null, mentions: extractMentions(text) });
-      }
-
-      setText("");
-      setShowEmoji(false);
-      textareaRef.current?.focus();
-    } finally {
-      setIsSending(false);
+    if (pendingImage) {
+      await onSend({
+        text: text.trim(),
+        type: "image",
+        imageData: previewSource || pendingImage.dataUrl,
+        imageFile: pendingImage.file,
+        mentions: extractMentions(text),
+      });
+      setPendingImage(null);
+      setOriginalPreviewDataUrl(null);
+      setEditedDataUrl(null);
+    } else {
+      await onSend({ text: text.trim(), type: "text", imageData: null, mentions: extractMentions(text) });
     }
+
+    setText("");
+    setShowEmoji(false);
+    textareaRef.current?.focus();
   }, [canSend, text, pendingImage, onSend, previewSource, onTypingStop]);
 
   // Voice recording complete handler — passes actual blob up
   const handleVoiceComplete = useCallback(
     async ({ blob, duration }) => {
-      setIsSending(true);
-      try {
-        await onSend({ type: "voice", text: "", duration, imageData: null, voiceBlob: blob });
-      } finally {
-        setIsSending(false);
-      }
+      await onSend({ type: "voice", text: "", duration, imageData: null, voiceBlob: blob });
     },
     [onSend]
   );
@@ -568,7 +556,7 @@ export default function MessageInput({
         </div>
 
         {!hasText && !pendingImage ? (
-          <VoiceRecorder disabled={disabled || isSending} onRecordingComplete={handleVoiceComplete} />
+          <VoiceRecorder disabled={disabled} onRecordingComplete={handleVoiceComplete} />
         ) : (
           <button
             type="button"
@@ -582,11 +570,7 @@ export default function MessageInput({
             }}
             aria-label="Send message"
           >
-            {isSending ? (
-              <Loader2 className="w-6 h-6 animate-spin" />
-            ) : (
-              <SendHorizontal className="w-6 h-6" />
-            )}
+            <SendHorizontal className="w-6 h-6" />
           </button>
         )}
       </div>
@@ -683,15 +667,10 @@ export default function MessageInput({
             <button
               type="button"
               onClick={handleSend}
-              disabled={isSending}
-              className="h-12 w-12 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30 hover:bg-emerald-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-12 w-12 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30 hover:bg-emerald-400 transition-colors"
               aria-label="Send selected image"
             >
-              {isSending ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <SendHorizontal className="w-5 h-5" />
-              )}
+              <SendHorizontal className="w-5 h-5" />
             </button>
           </div>
         </div>,

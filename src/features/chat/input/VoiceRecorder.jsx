@@ -118,30 +118,49 @@ export default function VoiceRecorder({ disabled, onRecordingComplete }) {
   return (
     <>
       {recording && (
-        <div className="flex items-center gap-3 rounded-xl bg-white/5 border border-white/10 px-3 py-2 animate-message-in">
-          <span className="relative flex h-2.5 w-2.5">
+        <div className="flex items-center gap-2 sm:gap-3 rounded-xl bg-white/5 border border-white/10 px-2 sm:px-3 py-2 animate-message-in flex-1 sm:flex-initial min-w-0">
+          {/* Red recording dot */}
+          <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500" />
           </span>
-          <span className="text-rose-400 text-xs font-medium tabular-nums">
-            Recording {recordSeconds}s
+
+          {/* Recording text - compact on mobile */}
+          <span className="text-rose-400 text-xs sm:text-sm font-medium tabular-nums whitespace-nowrap">
+            <span className="hidden sm:inline">Recording </span>
+            {recordSeconds}s
           </span>
-          <div className="flex items-end gap-0.5 h-5">
-            {generateWaveBars(16).map((bar, index) => (
+
+          {/* Waveform - hidden on small mobile, compact on larger mobile */}
+          <div className="hidden sm:flex items-end gap-0.5 h-5 flex-1 min-w-0">
+            {generateWaveBars(12).map((bar, index) => (
               <span
                 key={`${bar}-${index}`}
-                className="w-0.5 bg-teal-400/70 rounded-full animate-wave"
+                className="w-0.5 bg-teal-400/70 rounded-full animate-wave flex-shrink-0"
                 style={{ height: `${bar}px`, animationDelay: `${index * 60}ms` }}
               />
             ))}
           </div>
+
+          {/* Compact waveform for mobile */}
+          <div className="flex sm:hidden items-end gap-[1px] h-4 flex-1 min-w-0">
+            {generateWaveBars(8).map((bar, index) => (
+              <span
+                key={`${bar}-${index}`}
+                className="w-[2px] bg-teal-400/70 rounded-full animate-wave flex-shrink-0"
+                style={{ height: `${bar * 0.6}px`, animationDelay: `${index * 60}ms` }}
+              />
+            ))}
+          </div>
+
+          {/* Stop button - larger touch target */}
           <button
             type="button"
             onClick={stopRecording}
-            className="ml-auto h-8 w-8 flex items-center justify-center rounded-full bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 transition-colors"
+            className="ml-auto h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center rounded-full bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 transition-colors flex-shrink-0"
             aria-label="Stop recording"
           >
-            <Square className="w-3.5 h-3.5" />
+            <Square className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
       )}
