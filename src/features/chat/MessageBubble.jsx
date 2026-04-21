@@ -258,10 +258,9 @@ const MessageBubble = memo(function MessageBubble({
         setShowMessageMenu(false);
         setShowHoverMenu(false);
         setShowMobileSheet(false);
-        setShowMobileEmojiPicker(false);
       }
     }
-    if (showReactions || showMessageMenu || showHoverMenu || showMobileSheet || showMobileEmojiPicker) {
+    if (showReactions || showMessageMenu || showHoverMenu || showMobileSheet) {
       window.addEventListener("pointerdown", handleOutside);
     }
     return () => {
@@ -269,7 +268,7 @@ const MessageBubble = memo(function MessageBubble({
       clearTimeout(longPressRef.current);
       clearTimeout(voiceTimerRef.current);
     };
-  }, [showMessageMenu, showReactions, showHoverMenu, showMobileSheet, showMobileEmojiPicker]);
+  }, [showMessageMenu, showReactions, showHoverMenu, showMobileSheet]);
 
   useEffect(() => {
     if (!activeReactionEmoji) return undefined;
