@@ -1,5 +1,4 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import EmojiPicker from "emoji-picker-react";
 import {
   SmilePlus,
@@ -359,6 +358,8 @@ const MessageBubble = memo(function MessageBubble({
     ? { backgroundColor: isMine ? mineBubbleColor : theirBubbleColor, right: "-0.2rem", top: "0.4rem" }
     : { backgroundColor: isMine ? mineBubbleColor : theirBubbleColor, left: "-0.2rem", top: "0.4rem" };
 
+  const reactionBtnOrderClass = isRightSide ? "order-0" : "order-3";
+
   return (
     <div
       ref={rootRef}
@@ -403,6 +404,23 @@ const MessageBubble = memo(function MessageBubble({
         </div>
       )}
 
+      {/* Desktop hover reaction button — beside the bubble */}
+      {!isMobile() && (isHovered || showReactions) && !message.deleted && (
+        <div className={`flex-shrink-0 self-center ${reactionBtnOrderClass}`}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowReactions((prev) => !prev);
+            }}
+            className="p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-white/15"
+            style={{ backgroundColor: "rgba(0,0,0,0.2)" }}
+            aria-label="Add reaction"
+          >
+            <SmilePlus className="w-4 h-4 text-white/80" />
+          </button>
+        </div>
+      )}
+
         <div className={`flex flex-col gap-0.5 md:gap-1 max-w-[88%] md:max-w-[80%] ${bubbleAlignClass} ${contentOrderClass}`}>
         <div className="relative">
           {/* Desktop hover chevron - positioned ON the bubble */}
@@ -413,15 +431,15 @@ const MessageBubble = memo(function MessageBubble({
                 e.stopPropagation();
                 // Close other open menus first
                 document.dispatchEvent(new CustomEvent('closeMessageMenus', { detail: { messageId: message.id } }));
-                const rect = chevronRef.current?.getBoundingClientRect();
+                const rect = e.currentTarget.getBoundingClientRect();
                 if (!rect) return;
                 const spaceBelow = window.innerHeight - rect.bottom;
                 const menuHeight = 320;
                 const showAbove = spaceBelow < menuHeight;
-                // Position: for sent (right), open to left; for received (left), open to right
                 setMenuPosition({
-                  top: showAbove ? rect.top - menuHeight + 8 : rect.bottom + 8,
-                  left: isRightSide ? rect.left - 220 : rect.right + 8,
+                  top: showAbove ? rect.top - menuHeight + 8 : rect.bottom + 4,
+                  right: isRightSide ? (window.innerWidth - rect.right) : undefined,
+                  left: !isRightSide ? rect.left : undefined,
                 });
                 setShowHoverMenu(true);
               }}
@@ -629,16 +647,23 @@ const MessageBubble = memo(function MessageBubble({
         <div className={`relative ${reactionAlignClass}`}>
           {totalReactions.length > 0 && (
             <div className={`flex gap-1 flex-wrap ${reactionWrapAlignClass}`}>
-              {totalReactions.map(([emoji, users]) => (
-                <button
-                  key={emoji}
-                  onClick={() => setActiveReactionEmoji((prev) => (prev === emoji ? null : emoji))}
-                  className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/8 border border-white/10 text-xs hover:bg-white/15 transition-colors"
-                >
-                  <span>{emoji}</span>
-                  <span className="text-slate-400">{users.length}</span>
-                </button>
-              ))}
+              {totalReactions.map(([emoji, users]) => {
+                const iReacted = users.includes(currentUser?.id);
+                return (
+                  <button
+                    key={emoji}
+                    onClick={() => onReact?.(message.id, emoji)}
+                    className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs transition-colors ${
+                      iReacted
+                        ? "bg-white/15 border border-white/25 ring-1 ring-white/10"
+                        : "bg-white/8 border border-white/10 hover:bg-white/15"
+                    }`}
+                  >
+                    <span>{emoji}</span>
+                    <span className="text-slate-400">{users.length}</span>
+                  </button>
+                );
+              })}
             </div>
           )}
 
@@ -688,8 +713,8 @@ const MessageBubble = memo(function MessageBubble({
             </>
           )}
 
-          {/* Hover Dropdown Menu (Desktop) - Portal with fixed positioning */}
-          {showHoverMenu && createPortal(
+          {/* Hover Dropdown Menu (Desktop) - fixed positioning, no portal */}
+          {showHoverMenu && (
             <>
               {/* Backdrop */}
               <div
@@ -699,13 +724,15 @@ const MessageBubble = memo(function MessageBubble({
                   if (e.key === 'Escape') setShowHoverMenu(false);
                 }}
               />
-              {/* Menu - positioned relative to chevron */}
+              {/* Menu - positioned via getBoundingClientRect */}
               <div
                 className="fixed z-[130] w-56 rounded-xl border border-white/10 backdrop-blur-md shadow-2xl overflow-hidden animate-reaction-pop"
                 style={{
                   backgroundColor: "color-mix(in srgb, var(--color-surface) 93%, black 7%)",
                   top: menuPosition.top,
-                  left: menuPosition.left,
+                  ...(isRightSide
+                    ? { right: menuPosition.right, left: 'auto' }
+                    : { left: menuPosition.left, right: 'auto' }),
                   maxHeight: "400px",
                   overflowY: "auto",
                 }}
@@ -818,8 +845,7 @@ const MessageBubble = memo(function MessageBubble({
                   }}
                 />
               </div>
-            </>,
-            document.body
+            </>
           )}
         </div>
 

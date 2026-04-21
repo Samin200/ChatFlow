@@ -249,11 +249,13 @@ export function useChat(currentUser, chatIdFromRoute) {
         setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
         throttledRefreshContacts();
       }),
-      subscribeSocketEvent("reaction:update", (rawUpdatedMessage) => {
-        const updatedMessage = normalizeMessagePayload(rawUpdatedMessage);
-        if (!updatedMessage?.id) return;
+      subscribeSocketEvent("reaction:update", (rawPayload) => {
+        // Backend emits: { type, data: { messageId, reactions }, meta }
+        const messageId = rawPayload?.data?.messageId ?? rawPayload?.messageId;
+        const reactions = rawPayload?.data?.reactions ?? rawPayload?.reactions;
+        if (!messageId || !reactions) return;
         setMessages((prev) =>
-          prev.map((msg) => (msg.id === updatedMessage.id ? { ...msg, ...updatedMessage } : msg))
+          prev.map((msg) => (msg.id === messageId ? { ...msg, reactions } : msg))
         );
       }),
       subscribeSocketEvent("typing:start", (payload) => {
