@@ -1,4 +1,5 @@
-import { memo, useEffect, useMemo, useRef, useState, createPortal } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import EmojiPicker from "emoji-picker-react";
 import {
   SmilePlus,
