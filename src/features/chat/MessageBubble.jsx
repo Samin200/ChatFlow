@@ -652,7 +652,7 @@ const MessageBubble = memo(function MessageBubble({
                 return (
                   <button
                     key={emoji}
-                    onClick={() => onReact?.(message.id, emoji)}
+                    onClick={() => setActiveReactionEmoji((prev) => (prev === emoji ? null : emoji))}
                     className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs transition-colors ${
                       iReacted
                         ? "bg-white/15 border border-white/25 ring-1 ring-white/10"

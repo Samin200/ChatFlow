@@ -35,20 +35,20 @@ export default function CallOverlay({
     
     if (!remoteStream) return;
 
-    // For video calls, attach to video element
-    if (isVideo && remoteVideoRef.current) {
+    // Attach to video element if it exists
+    if (remoteVideoRef.current) {
       remoteVideoRef.current.srcObject = remoteStream;
-      console.log('[CALL] remoteStream attached to video element, calling play()');
+      console.log('[CALL] remoteStream attached to video element');
       remoteVideoRef.current.play().catch(err => {
         console.error('[CALL] Video play failed:', err);
       });
     }
     
-    // For voice calls, attach to audio element
-    if (!isVideo && remoteAudioRef.current) {
+    // Attach to audio element if it exists
+    if (remoteAudioRef.current) {
       remoteAudioRef.current.srcObject = remoteStream;
       remoteAudioRef.current.muted = false;
-      console.log('[CALL] remoteStream attached to audio element, calling play()');
+      console.log('[CALL] remoteStream attached to audio element');
       remoteAudioRef.current.play().catch(err => {
         console.error('[CALL] Audio play failed:', err);
       });
