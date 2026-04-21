@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState, createPortal } from "react";
 import EmojiPicker from "emoji-picker-react";
 import {
   SmilePlus,
@@ -93,6 +93,9 @@ const MessageBubble = memo(function MessageBubble({
 
   // Mobile action sheet state
   const [showMobileSheet, setShowMobileSheet] = useState(false);
+
+  // Dropdown positioning ref
+  const chevronRef = useRef(null);
 
   const rootRef = useRef(null);
   const reactionPanelRef = useRef(null);
@@ -293,6 +296,29 @@ const MessageBubble = memo(function MessageBubble({
     };
   }, [activeReactionEmoji]);
 
+  // Close menu when another message's menu opens or on resize
+  useEffect(() => {
+    function handleCloseMenus(e) {
+      if (e.detail?.messageId !== message.id) {
+        setShowHoverMenu(false);
+      }
+    }
+    function handleResize() {
+      setShowHoverMenu(false);
+    }
+    function handleEscape(e) {
+      if (e.key === 'Escape') setShowHoverMenu(false);
+    }
+    document.addEventListener('closeMessageMenus', handleCloseMenus);
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('closeMessageMenus', handleCloseMenus);
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('keydown', handleEscape);
+    };
+  }, [message.id]);
+
   const avatarColor = getAvatarColor(sender?.id);
   const canInlineMeta = !message.deleted && message.type === "text";
   const customLayout = appearance?.useCustomSideStyle ? appearance?.customSideLayout : "default";
@@ -381,16 +407,20 @@ const MessageBubble = memo(function MessageBubble({
           {/* Desktop hover chevron - positioned ON the bubble */}
           {!isMobile() && (isHovered || showHoverMenu) && !message.deleted && (
             <button
+              ref={chevronRef}
               onClick={(e) => {
                 e.stopPropagation();
-                const rect = e.currentTarget.getBoundingClientRect();
+                // Close other open menus first
+                document.dispatchEvent(new CustomEvent('closeMessageMenus', { detail: { messageId: message.id } }));
+                const rect = chevronRef.current?.getBoundingClientRect();
+                if (!rect) return;
                 const spaceBelow = window.innerHeight - rect.bottom;
                 const menuHeight = 320;
                 const showAbove = spaceBelow < menuHeight;
+                // Position: for sent (right), open to left; for received (left), open to right
                 setMenuPosition({
-                  x: rect.left,
-                  y: showAbove ? rect.top : rect.bottom,
-                  above: showAbove,
+                  top: showAbove ? rect.top - menuHeight + 8 : rect.bottom + 8,
+                  left: isRightSide ? rect.left - 220 : rect.right + 8,
                 });
                 setShowHoverMenu(true);
               }}
@@ -657,21 +687,24 @@ const MessageBubble = memo(function MessageBubble({
             </>
           )}
 
-          {/* Hover Dropdown Menu (Desktop) */}
-          {showHoverMenu && (
+          {/* Hover Dropdown Menu (Desktop) - Portal with fixed positioning */}
+          {showHoverMenu && createPortal(
             <>
+              {/* Backdrop */}
               <div
                 className="fixed inset-0 z-[125]"
                 onClick={() => setShowHoverMenu(false)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') setShowHoverMenu(false);
+                }}
               />
+              {/* Menu - positioned relative to chevron */}
               <div
                 className="fixed z-[130] w-56 rounded-xl border border-white/10 backdrop-blur-md shadow-2xl overflow-hidden animate-reaction-pop"
                 style={{
                   backgroundColor: "color-mix(in srgb, var(--color-surface) 93%, black 7%)",
-                  left: isRightSide ? "auto" : menuPosition.x,
-                  right: isRightSide ? `calc(100vw - ${menuPosition.x}px - 28px)` : "auto",
-                  top: menuPosition.above ? "auto" : menuPosition.y + 8,
-                  bottom: menuPosition.above ? `calc(100vh - ${menuPosition.y}px + 8px)` : "auto",
+                  top: menuPosition.top,
+                  left: menuPosition.left,
                   maxHeight: "400px",
                   overflowY: "auto",
                 }}
@@ -784,7 +817,8 @@ const MessageBubble = memo(function MessageBubble({
                   }}
                 />
               </div>
-            </>
+            </>,
+            document.body
           )}
         </div>
 

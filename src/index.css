@@ -23,7 +23,7 @@
 /* ── Scrollbar styling ──────────────────────────────────────────────────────── */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+  scrollbar-color: color-mix(in srgb, var(--color-text) 15%, transparent) transparent;
 }
 
 *::-webkit-scrollbar {
@@ -36,12 +36,12 @@
 }
 
 *::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.08);
+  background-color: color-mix(in srgb, var(--color-text) 15%, transparent);
   border-radius: 99px;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255, 255, 255, 0.15);
+  background-color: color-mix(in srgb, var(--color-text) 25%, transparent);
 }
 
 /* ── Base ────────────────────────────────────────────────────────────────────── */
@@ -201,8 +201,8 @@ body,
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {
-  -webkit-text-fill-color: white;
-  -webkit-box-shadow: 0 0 0px 1000px rgba(255, 255, 255, 0.05) inset;
+  -webkit-text-fill-color: var(--color-text);
+  -webkit-box-shadow: 0 0 0px 1000px color-mix(in srgb, var(--color-surface) 95%, var(--color-text) 5%) inset;
   transition: background-color 5000s ease-in-out 0s;
 }
 
