@@ -18,6 +18,8 @@ import {
   TriangleAlert,
   Trash2,
   CheckCircle2,
+  Pencil,
+  MessageCircle,
 } from "lucide-react";
 import {
   formatMessageTime,
@@ -73,6 +75,8 @@ const MessageBubble = memo(function MessageBubble({
   const [showMessageMenu, setShowMessageMenu] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const [showHoverMenu, setShowHoverMenu] = useState(false);
+  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0, above: false });
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [isPlayingVoice, setIsPlayingVoice] = useState(false);
   const rootRef = useRef(null);
@@ -107,8 +111,22 @@ const MessageBubble = memo(function MessageBubble({
   function handleLongPressStart() {
     clearTimeout(longPressRef.current);
     longPressRef.current = setTimeout(() => {
-      setShowActions(true);
-    }, 420);
+      // On mobile, open the hover menu instead of the old action sheet
+      if (isTouchDevice && rootRef.current) {
+        const rect = rootRef.current.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const menuHeight = 320;
+        const showAbove = spaceBelow < menuHeight;
+        setMenuPosition({
+          x: rect.left + rect.width / 2,
+          y: showAbove ? rect.top : rect.bottom,
+          above: showAbove,
+        });
+        setShowHoverMenu(true);
+      } else {
+        setShowActions(true);
+      }
+    }, 500);
   }
 
   function handleLongPressEnd() {
@@ -170,9 +188,10 @@ const MessageBubble = memo(function MessageBubble({
         setShowReactions(false);
         setActiveReactionEmoji(null);
         setShowMessageMenu(false);
+        setShowHoverMenu(false);
       }
     }
-    if (showReactions || showMessageMenu) {
+    if (showReactions || showMessageMenu || showHoverMenu) {
       window.addEventListener("pointerdown", handleOutside);
     }
     return () => {
@@ -180,7 +199,7 @@ const MessageBubble = memo(function MessageBubble({
       clearTimeout(longPressRef.current);
       clearTimeout(voiceTimerRef.current);
     };
-  }, [showMessageMenu, showReactions]);
+  }, [showMessageMenu, showReactions, showHoverMenu]);
 
   useEffect(() => {
     if (!activeReactionEmoji) return undefined;
@@ -533,54 +552,165 @@ const MessageBubble = memo(function MessageBubble({
             </>
           )}
 
-          {showMessageMenu && (
-            <div
-              ref={messageMenuRef}
-              className={`absolute z-[130] ${isRightSide ? "right-0" : "left-0"} mt-1 w-72 rounded-2xl border border-white/10 backdrop-blur-md shadow-2xl overflow-hidden animate-reaction-pop`}
-              style={{ backgroundColor: "color-mix(in srgb, var(--color-surface) 93%, black 7%)" }}
+          {/* Hover Chevron Button */}
+          {(isHovered || showHoverMenu) && !message.deleted && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                const rect = e.currentTarget.getBoundingClientRect();
+                const spaceBelow = window.innerHeight - rect.bottom;
+                const menuHeight = 320;
+                const showAbove = spaceBelow < menuHeight;
+                setMenuPosition({
+                  x: rect.left,
+                  y: showAbove ? rect.top : rect.bottom,
+                  above: showAbove,
+                });
+                setShowHoverMenu(true);
+              }}
+              className={`absolute top-1 z-20 p-1.5 rounded-full transition-all duration-200 ${
+                isRightSide
+                  ? "-left-10"
+                  : "-right-10"
+              }`}
+              style={{
+                backgroundColor: "color-mix(in srgb, var(--color-surface) 80%, black 20%)",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+              }}
+              aria-label="Message options"
             >
-              <MenuItem icon={Reply} label="Reply" onClick={() => setShowMessageMenu(false)} />
-              <MenuItem icon={SmilePlus} label="React" onClick={() => { setShowMessageMenu(false); setShowReactions(true); }} />
-              <MenuItem
-                icon={Star}
-                label="Star"
-                onClick={() => {
-                  onToggleStar?.(message.id);
-                  setShowMessageMenu(false);
-                }}
-              />
-              <MenuItem icon={Pin} label="Pin" onClick={() => { onToggleStar?.(message.id); setShowMessageMenu(false); }} />
-              <MenuItem icon={Forward} label="Forward" onClick={() => setShowMessageMenu(false)} />
-              <MenuItem
-                icon={Copy}
-                label="Copy"
-                onClick={async () => {
-                  try {
-                    await navigator.clipboard.writeText(String(message.text ?? ""));
-                  } catch {
-                    // ignore clipboard failures silently on unsupported environments
-                  }
-                  setShowMessageMenu(false);
-                }}
-              />
+              <ChevronDown className="w-4 h-4" style={{ color: "var(--color-text)" }} />
+            </button>
+          )}
 
-              <div className="h-px bg-white/10 my-1" />
-              <MenuItem icon={Reply} label="Reply privately" onClick={() => setShowMessageMenu(false)} />
-              <MenuItem icon={Reply} label={`Message ${activeContact?.displayName ?? "user"}`} onClick={() => setShowMessageMenu(false)} />
-              <MenuItem icon={TriangleAlert} label="Report" onClick={() => setShowMessageMenu(false)} />
-
-              <div className="h-px bg-white/10 my-1" />
-              <MenuItem
-                icon={Trash2}
-                label="Delete"
-                danger
-                onClick={() => {
-                  onDelete?.(message.id, isMine ? "everyone" : "me");
-                  setShowMessageMenu(false);
-                }}
+          {/* Hover Dropdown Menu */}
+          {showHoverMenu && (
+            <>
+              <div
+                className="fixed inset-0 z-[125]"
+                onClick={() => setShowHoverMenu(false)}
               />
-              <MenuItem icon={CheckCircle2} label="Select messages" onClick={() => setShowMessageMenu(false)} />
-            </div>
+              <div
+                className="fixed z-[130] w-56 rounded-xl border border-white/10 backdrop-blur-md shadow-2xl overflow-hidden animate-reaction-pop"
+                style={{
+                  backgroundColor: "color-mix(in srgb, var(--color-surface) 93%, black 7%)",
+                  left: isRightSide ? "auto" : menuPosition.x,
+                  right: isRightSide ? `calc(100vw - ${menuPosition.x}px - 28px)` : "auto",
+                  top: menuPosition.above ? "auto" : menuPosition.y + 8,
+                  bottom: menuPosition.above ? `calc(100vh - ${menuPosition.y}px + 8px)` : "auto",
+                  maxHeight: "400px",
+                  overflowY: "auto",
+                }}
+              >
+                {/* Group 1: Common Actions */}
+                <MenuItem
+                  icon={SmilePlus}
+                  label="React"
+                  onClick={() => {
+                    setShowHoverMenu(false);
+                    setShowReactions(true);
+                  }}
+                />
+                <MenuItem
+                  icon={Star}
+                  label="Star"
+                  onClick={() => {
+                    onToggleStar?.(message.id);
+                    setShowHoverMenu(false);
+                  }}
+                />
+                <MenuItem
+                  icon={Pin}
+                  label="Pin"
+                  onClick={() => {
+                    // TODO: Implement pin
+                    setShowHoverMenu(false);
+                  }}
+                />
+                <MenuItem
+                  icon={Forward}
+                  label="Forward"
+                  onClick={() => {
+                    // TODO: Implement forward
+                    setShowHoverMenu(false);
+                  }}
+                />
+                <MenuItem
+                  icon={Copy}
+                  label="Copy"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(String(message.text ?? ""));
+                    } catch {
+                      // ignore clipboard failures
+                    }
+                    setShowHoverMenu(false);
+                  }}
+                />
+
+                <div className="h-px bg-white/10 my-1" />
+
+                {/* Group 2: Reply/Contact Actions (only for received messages in groups) */}
+                {!isMine && isGroupChat && (
+                  <>
+                    <MenuItem
+                      icon={Reply}
+                      label="Reply privately"
+                      onClick={() => {
+                        // TODO: Navigate to DM with sender
+                        setShowHoverMenu(false);
+                      }}
+                    />
+                    <MenuItem
+                      icon={MessageCircle}
+                      label={`Message ${sender?.displayName ?? "user"}`}
+                      onClick={() => {
+                        // TODO: Navigate to DM
+                        setShowHoverMenu(false);
+                      }}
+                    />
+                    <MenuItem
+                      icon={TriangleAlert}
+                      label="Report"
+                      onClick={() => {
+                        // TODO: Report message
+                        setShowHoverMenu(false);
+                      }}
+                    />
+                    <div className="h-px bg-white/10 my-1" />
+                  </>
+                )}
+
+                {/* Group 3: Edit/Delete for mine, Delete for others */}
+                {isMine && (
+                  <MenuItem
+                    icon={Pencil}
+                    label="Edit"
+                    onClick={() => {
+                      onEdit?.(message);
+                      setShowHoverMenu(false);
+                    }}
+                  />
+                )}
+                <MenuItem
+                  icon={Trash2}
+                  label="Delete"
+                  danger
+                  onClick={() => {
+                    onDelete?.(message.id, isMine ? "everyone" : "me");
+                    setShowHoverMenu(false);
+                  }}
+                />
+                <MenuItem
+                  icon={CheckCircle2}
+                  label="Select messages"
+                  onClick={() => {
+                    // TODO: Enter multi-select mode
+                    setShowHoverMenu(false);
+                  }}
+                />
+              </div>
+            </>
           )}
         </div>
 

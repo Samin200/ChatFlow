@@ -198,7 +198,24 @@ export function useChat(currentUser, chatIdFromRoute) {
 
         if (isForActive) {
           setMessages((prev) => {
+            // Check if message already exists by real ID
             if (prev.some((msg) => msg.id === incoming.id)) return prev;
+
+            // Check if this is our own message coming back via socket
+            // Remove any temp message with same content from us
+            const isFromMe = String(incoming.senderId) === String(me.id);
+            if (isFromMe) {
+              const tempIndex = prev.findIndex(
+                (msg) => msg._isTemp && msg.senderId === me.id && msg.text === incoming.text
+              );
+              if (tempIndex !== -1) {
+                // Replace temp message with real one
+                const newMessages = [...prev];
+                newMessages[tempIndex] = incoming;
+                return newMessages;
+              }
+            }
+
             return [...prev, incoming];
           });
           await markConversationRead(me.id, activeId);
@@ -410,14 +427,21 @@ export function useChat(currentUser, chatIdFromRoute) {
       }
 
       // Replace temp message with actual message from server
+      // (or remove temp if socket already added the real message)
       if (sender.message) {
-        setMessages((prev) =>
-          prev.map((m) =>
+        setMessages((prev) => {
+          // Check if real message already exists (from socket)
+          if (prev.some((m) => m.id === sender.message.id)) {
+            // Remove temp message only
+            return prev.filter((m) => m.id !== tempId);
+          }
+          // Replace temp with real message
+          return prev.map((m) =>
             m.id === tempId
               ? { ...sender.message, status: sender.message.status || "sent" }
               : m
-          )
-        );
+          );
+        });
       }
 
       const shouldRunBotFallback = !USE_BACKEND;

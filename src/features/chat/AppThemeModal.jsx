@@ -214,14 +214,14 @@ export default function AppThemeModal({ open, onClose, onThemeApplied }) {
     <div className="fixed inset-0 z-[130] flex items-end justify-center p-2 sm:items-center sm:p-4" onClick={handleCancel}>
       <div className="absolute inset-0 bg-black/65" />
       <div
-        className="relative w-full max-w-4xl rounded-2xl border shadow-2xl max-h-[92dvh] overflow-hidden"
+        className="relative w-full max-w-4xl rounded-2xl border shadow-2xl max-h-[92dvh] flex flex-col overflow-hidden"
         style={{
           borderColor: "color-mix(in srgb, var(--color-text) 14%, transparent)",
           backgroundColor: "color-mix(in srgb, var(--color-surface) 96%, black 4%)",
         }}
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: "color-mix(in srgb, var(--color-text) 14%, transparent)" }}>
+        <div className="px-5 py-4 border-b flex items-center justify-between shrink-0" style={{ borderColor: "color-mix(in srgb, var(--color-text) 14%, transparent)" }}>
           <h3 className="text-xl font-semibold" style={{ color: "var(--color-text)" }}>Design System Board</h3>
           <button
             onClick={handleCancel}
@@ -234,7 +234,7 @@ export default function AppThemeModal({ open, onClose, onThemeApplied }) {
           </button>
         </div>
 
-        <div className="p-3 sm:p-4 grid grid-cols-1 md:grid-cols-2 gap-3 overflow-y-auto max-h-[calc(92dvh-84px)]">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
           {themes.map((theme) => {
             const selected = theme.name === activeThemeName;
             const isCustom = theme.name === CUSTOM_THEME_NAME;
@@ -314,16 +314,17 @@ export default function AppThemeModal({ open, onClose, onThemeApplied }) {
           })}
         </div>
 
-        {/* Save Changes Button - Bottom Right */}
+        {/* Save Changes Button - Bottom */}
         {!isCustomEditorOpen && (
-          <div className="px-5 py-4 border-t flex justify-between items-center" style={{ borderColor: "color-mix(in srgb, var(--color-text) 14%, transparent)" }}>
+          <div className="px-5 py-4 border-t flex justify-between items-center shrink-0" style={{ borderColor: "color-mix(in srgb, var(--color-text) 20%, transparent)", backgroundColor: "var(--color-surface)" }}>
             <button
               type="button"
               onClick={handleCancel}
-              className="px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-105 active:scale-95"
+              className="px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-105 active:scale-95 border"
               style={{
                 color: "var(--color-text)",
-                backgroundColor: "color-mix(in srgb, var(--color-surface) 80%, transparent)",
+                borderColor: "color-mix(in srgb, var(--color-text) 30%, transparent)",
+                backgroundColor: "color-mix(in srgb, var(--color-background) 70%, transparent)",
               }}
             >
               Cancel
@@ -332,11 +333,11 @@ export default function AppThemeModal({ open, onClose, onThemeApplied }) {
               type="button"
               onClick={handleSaveChanges}
               disabled={!hasChanges || isSaving}
-              className="px-6 py-2.5 rounded-xl text-sm font-semibold transition-all hover:scale-105 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+              className="px-6 py-2.5 rounded-xl text-sm font-semibold transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
-                color: "white",
-                backgroundColor: hasChanges ? "var(--color-accent)" : "var(--color-primary)",
-                boxShadow: hasChanges ? "0 4px 14px color-mix(in srgb, var(--color-accent) 50%, transparent)" : "0 2px 8px color-mix(in srgb, var(--color-primary) 30%, transparent)",
+                color: "#ffffff",
+                backgroundColor: hasChanges ? "var(--color-accent)" : "#64748b",
+                boxShadow: hasChanges ? "0 4px 14px rgba(0,0,0,0.3)" : "none",
               }}
             >
               {isSaving ? "Saving..." : "Save Changes"}
