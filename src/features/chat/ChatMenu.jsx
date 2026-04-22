@@ -3,7 +3,25 @@ import { MoreVertical } from "lucide-react";
 
 export default function ChatMenu({ items = [], menuClassName = "", buttonClassName = "" }) {
   const [open, setOpen] = useState(false);
+  const [menuPosition, setMenuPosition] = useState("bottom");
   const containerRef = useRef(null);
+  const buttonRef = useRef(null);
+
+  useEffect(() => {
+    if (!open || !buttonRef.current) return;
+
+    const button = buttonRef.current;
+    const buttonRect = button.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - buttonRect.bottom;
+    const menuHeight = items.length * 40 + 16;
+    const spaceAbove = buttonRect.top;
+
+    if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
+      setMenuPosition("top");
+    } else {
+      setMenuPosition("bottom");
+    }
+  }, [open, items.length]);
 
   useEffect(() => {
     if (!open) return;
@@ -32,6 +50,7 @@ export default function ChatMenu({ items = [], menuClassName = "", buttonClassNa
   return (
     <div className="relative z-[100]" ref={containerRef}>
       <button
+        ref={buttonRef}
         onClick={() => setOpen((prev) => !prev)}
         className={`p-2 rounded-xl transition-all ${buttonClassName}`}
         style={{
@@ -45,7 +64,7 @@ export default function ChatMenu({ items = [], menuClassName = "", buttonClassNa
 
       {open && (
         <div
-          className={`absolute right-0 top-full mt-1 z-[9999] min-w-44 rounded-xl border p-1 shadow-xl animate-reaction-pop ${menuClassName}`}
+          className={`absolute ${menuPosition === "top" ? "bottom-full mb-2" : "top-full mt-2"} right-0 z-[9999] min-w-44 rounded-xl border p-1 shadow-xl animate-reaction-pop ${menuClassName}`}
           style={{
             borderColor: "color-mix(in srgb, var(--color-text) 14%, transparent)",
             backgroundColor: "color-mix(in srgb, var(--color-surface) 94%, black 6%)",
