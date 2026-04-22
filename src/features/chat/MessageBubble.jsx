@@ -79,7 +79,9 @@ const MessageBubble = memo(function MessageBubble({
   const [isHovered, setIsHovered] = useState(false);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
   const [showHoverMenu, setShowHoverMenu] = useState(false);
-  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0, above: false });
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, right: 0 });
+  const [opensUpward, setOpensUpward] = useState(false);
+  const dropdownRef = useRef(null);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [isPlayingVoice, setIsPlayingVoice] = useState(false);
   const [isMobileDevice, setIsMobileDevice] = useState(false);
@@ -95,8 +97,9 @@ const MessageBubble = memo(function MessageBubble({
   // Mobile action sheet state
   const [showMobileSheet, setShowMobileSheet] = useState(false);
 
-  // Dropdown positioning ref
+  // Dropdown positioning refs
   const chevronRef = useRef(null);
+  const dropdownMeasuredRef = useRef(false);
 
   const rootRef = useRef(null);
   const reactionPanelRef = useRef(null);
@@ -327,6 +330,32 @@ const MessageBubble = memo(function MessageBubble({
     };
   }, [message.id]);
 
+  // Measure actual dropdown height after render and adjust if needed
+  useEffect(() => {
+    if (showHoverMenu && dropdownRef.current && !dropdownMeasuredRef.current) {
+      const dropdownRect = dropdownRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const MARGIN = 8;
+
+      // Check if dropdown extends below viewport
+      const bottomOverflow = dropdownRect.bottom - viewportHeight;
+      if (bottomOverflow > 0) {
+        // Reposition upward
+        const newTop = Math.max(MARGIN, menuPosition.top - dropdownRect.height - 16);
+        setMenuPosition(prev => ({ ...prev, top: newTop }));
+        setOpensUpward(true);
+      }
+
+      // Check if dropdown extends above viewport
+      if (dropdownRect.top < 0) {
+        const newTop = MARGIN;
+        setMenuPosition(prev => ({ ...prev, top: newTop }));
+      }
+
+      dropdownMeasuredRef.current = true;
+    }
+  }, [showHoverMenu, menuPosition.top]);
+
   const isMobile = () => isMobileDevice;
 
   const avatarColor = getAvatarColor(sender?.id);
@@ -377,7 +406,7 @@ const MessageBubble = memo(function MessageBubble({
         activeReactionEmoji || showMessageMenu ? "z-[70]" : "z-0"
       }`}
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseLeave={() => { if (!showHoverMenu) setIsHovered(false) }}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onTouchMove={handleTouchMove}
@@ -441,16 +470,39 @@ const MessageBubble = memo(function MessageBubble({
                 e.stopPropagation();
                 // Close other open menus first
                 document.dispatchEvent(new CustomEvent('closeMessageMenus', { detail: { messageId: message.id } }));
-                const rect = e.currentTarget.getBoundingClientRect();
+                const rect = chevronRef.current?.getBoundingClientRect();
                 if (!rect) return;
-                const spaceBelow = window.innerHeight - rect.bottom;
-                const menuHeight = 320;
-                const showAbove = spaceBelow < menuHeight;
-                setMenuPosition({
-                  top: showAbove ? rect.top - menuHeight + 8 : rect.bottom + 4,
-                  right: isRightSide ? (window.innerWidth - rect.right) : undefined,
-                  left: !isRightSide ? rect.left : undefined,
-                });
+
+                const DROPDOWN_HEIGHT = 280; // approximate dropdown height in px
+                const VIEWPORT_HEIGHT = window.innerHeight;
+                const MARGIN = 8; // gap between chevron and dropdown
+
+                const spaceBelow = VIEWPORT_HEIGHT - rect.bottom;
+                const spaceAbove = rect.top;
+
+                // Only open upward if there's not enough space below AND more space above
+                const openUpward = spaceBelow < DROPDOWN_HEIGHT && spaceAbove > spaceBelow;
+
+                const top = openUpward
+                  ? Math.max(MARGIN, rect.top - DROPDOWN_HEIGHT - MARGIN)  // open above, clamp to viewport
+                  : rect.bottom + MARGIN;  // open below
+
+                if (isRightSide) {
+                  setMenuPosition({
+                    top,
+                    right: window.innerWidth - rect.right,
+                    left: 'auto',
+                  });
+                } else {
+                  setMenuPosition({
+                    top,
+                    left: rect.left,
+                    right: 'auto',
+                  });
+                }
+
+                setOpensUpward(openUpward);
+                dropdownMeasuredRef.current = false;
                 setShowHoverMenu(true);
               }}
               className={`absolute top-1 z-30 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 ${
@@ -619,11 +671,34 @@ const MessageBubble = memo(function MessageBubble({
                   </span>
                   {isMine && (
                     <div className="flex items-center justify-center shrink-0 ml-0.5">
-                      <StatusTicks
-                        status={message.status}
-                        compact
-                        seenColor={appearance?.theme?.accent || "var(--color-accent)"}
-                      />
+                      {isHovered || showHoverMenu ? (
+                        <button
+                          tabIndex={0}
+                          role="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const VIEWPORT_HEIGHT = window.innerHeight;
+                            const MARGIN = 8;
+                            const spaceBelow = VIEWPORT_HEIGHT - rect.bottom;
+                            const spaceAbove = rect.top;
+                            const openUpward = spaceBelow < 280 && spaceAbove > spaceBelow;
+                            const top = openUpward ? rect.top - 280 - MARGIN : rect.bottom + MARGIN;
+                            setMenuPosition({ above: openUpward, top: top, left: rect.left });
+                            setShowHoverMenu(true);
+                          }}
+                          className="flex items-center justify-center"
+                          style={{ width: 14, height: 14, background: 'rgba(255,255,255,0.12)', borderRadius: '50%' }}
+                        >
+                          <ChevronDown size={8} color="white" />
+                        </button>
+                      ) : (
+                        <StatusTicks
+                          status={message.status}
+                          compact
+                          seenColor={appearance?.theme?.accent || "var(--color-accent)"}
+                        />
+                      )}
                     </div>
                   )}
                 </div>
@@ -643,11 +718,36 @@ const MessageBubble = memo(function MessageBubble({
                   {formatMessageTime(message.createdAt)}
                 </span>
                 {isMine && (
-                  <StatusTicks
-                    status={message.status}
-                    compact
-                    seenColor={appearance?.theme?.accent || "var(--color-accent)"}
-                  />
+                  <div className="flex items-center justify-center shrink-0 ml-0.5">
+                    {isHovered || showHoverMenu ? (
+                      <button
+                        tabIndex={0}
+                        role="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const VIEWPORT_HEIGHT = window.innerHeight;
+                          const MARGIN = 8;
+                          const spaceBelow = VIEWPORT_HEIGHT - rect.bottom;
+                          const spaceAbove = rect.top;
+                          const openUpward = spaceBelow < 280 && spaceAbove > spaceBelow;
+                          const top = openUpward ? rect.top - 280 - MARGIN : rect.bottom + MARGIN;
+                          setMenuPosition({ above: openUpward, top: top, left: rect.left });
+                          setShowHoverMenu(true);
+                        }}
+                        className="flex items-center justify-center"
+                        style={{ width: 14, height: 14, background: 'rgba(255,255,255,0.12)', borderRadius: '50%' }}
+                      >
+                        <ChevronDown size={8} color="white" />
+                      </button>
+                    ) : (
+                      <StatusTicks
+                        status={message.status}
+                        compact
+                        seenColor={appearance?.theme?.accent || "var(--color-accent)"}
+                      />
+                    )}
+                  </div>
                 )}
               </div>
             )}
@@ -726,25 +826,21 @@ const MessageBubble = memo(function MessageBubble({
           {/* Hover Dropdown Menu (Desktop) - fixed positioning, no portal */}
           {showHoverMenu && (
             <>
-              {/* Backdrop */}
               <div
-                className="fixed inset-0 z-[125]"
+                className="daisyui modal modal-open fixed inset-0 z-[9998] bg-black/50"
                 onClick={() => setShowHoverMenu(false)}
                 onKeyDown={(e) => {
                   if (e.key === 'Escape') setShowHoverMenu(false);
                 }}
               />
-              {/* Menu - positioned via getBoundingClientRect */}
               <div
-                className="fixed z-[130] w-56 rounded-xl border border-white/10 backdrop-blur-md shadow-2xl overflow-hidden animate-reaction-pop"
+                ref={dropdownRef}
+                className="daisyui modal-box fixed z-[9999] w-72 rounded-2xl border border-white/10 bg-slate-800 shadow-2xl overflow-hidden max-h-[80vh]"
                 style={{
-                  backgroundColor: "color-mix(in srgb, var(--color-surface) 93%, black 7%)",
                   top: menuPosition.top,
-                  ...(isRightSide
-                    ? { right: menuPosition.right, left: 'auto' }
-                    : { left: menuPosition.left, right: 'auto' }),
-                  maxHeight: "400px",
-                  overflowY: "auto",
+                  left: menuPosition.left === 'auto' ? 'auto' : menuPosition.left,
+                  right: menuPosition.right === 'auto' ? 'auto' : menuPosition.right,
+                  transformOrigin: opensUpward ? 'bottom center' : 'top center',
                 }}
               >
                 {/* Group 1: Common Actions */}
