@@ -117,8 +117,19 @@ export default function ChatHeader({
             </div>
           )}
           <div
-            className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2"
-            style={{ borderColor: "var(--color-surface)" }}
+            className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2"
+            style={{
+              backgroundColor: contact?.online
+                ? contact?.presenceStatus === "dnd"
+                  ? "#ef4444"
+                  : contact?.presenceStatus === "away"
+                    ? "#f59e0b"
+                    : contact?.presenceStatus === "offline"
+                      ? "#6b7280"
+                      : "#22c55e"
+                : "transparent",
+              borderColor: "var(--color-surface)",
+            }}
           />
         </div>
 

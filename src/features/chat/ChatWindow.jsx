@@ -94,7 +94,7 @@ export default function ChatWindow({
 
   return (
     <div
-      className="relative isolate flex flex-col h-full min-h-0 overflow-x-hidden"
+      className="relative isolate flex flex-col h-full min-h-0"
       style={resolvedAppearance?.backgroundStyle ?? { backgroundColor: resolvedTheme?.chatBackground ?? "var(--color-background)" }}
     >
       <ChatHeader

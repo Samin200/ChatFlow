@@ -21,12 +21,12 @@ import VoiceRecorder from "./input/VoiceRecorder.jsx";
 import MentionDropdown from "./input/MentionDropdown.jsx";
 
 const GIF_LIBRARY = [
-  { id: "gif-1", title: "Happy dance", url: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExc3M3dDNxbG42ejVnaXlxcTFvM2ZybW9hNm9mMWF4bW53YjQ4a2dxMSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/l0MYt5jPR6QX5pnqM/giphy.gif" },
-  { id: "gif-2", title: "Clap", url: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNXVjYjN4cWk4YjN1N2R5a3V4YTMxOTQ3bWJscndpZjBwY2Q4bXFqNSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/3ohhweiVB36rAlqVCE/giphy.gif" },
-  { id: "gif-3", title: "Laugh", url: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYWlyZzN4N2NpOTR3N2VqejAzODJrMWQ2NTU4ZThvYXJ2YjllY2N0NyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/10JhviFuU2gWD6/giphy.gif" },
-  { id: "gif-4", title: "Thumbs up", url: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHFiNnFlMjV6aTA0cm9iZXNnd2VnN2M2bHJvY3dqZnBydWhhN2VxNSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/xUPGcguWZHRC2HyBRS/giphy.gif" },
-  { id: "gif-5", title: "Wow", url: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExeGQxZTc1NTdpbDJzNXVwd3ljMTRnaG1tNWhvMnpnMnJsM2N1cWVyYiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/3oEjI6SIIHBdRxXI40/giphy.gif" },
-  { id: "gif-6", title: "Party", url: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNTdkd2psM2trcjZ4N3pmcXh6bnN4dG5jZHRvMjM4N3BndzB3ZjNnMSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/26BRv0ThflsHCqDrG/giphy.gif" },
+  { id: "gif-1", title: "Happy", url: "https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif" },
+  { id: "gif-2", title: "Clap", url: "https://media.giphy.com/media/3ohhweiVB36rAlqVCE/giphy.gif" },
+  { id: "gif-3", title: "Laugh", url: "https://media.giphy.com/media/10JhviFuU2gWD6/giphy.gif" },
+  { id: "gif-4", title: "Thumbs up", url: "https://media.giphy.com/media/xUPGcguWZHRC2HyBRS/giphy.gif" },
+  { id: "gif-5", title: "Wow", url: "https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif" },
+  { id: "gif-6", title: "Party", url: "https://media.giphy.com/media/26BRv0ThflsHCqDrG/giphy.gif" },
 ];
 
 export default function MessageInput({

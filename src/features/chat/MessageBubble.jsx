@@ -82,6 +82,7 @@ const MessageBubble = memo(function MessageBubble({
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0, above: false });
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [isPlayingVoice, setIsPlayingVoice] = useState(false);
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
 
   // Swipe to reply state (mobile)
   const [swipeOffset, setSwipeOffset] = useState(0);
@@ -103,12 +104,19 @@ const MessageBubble = memo(function MessageBubble({
   const longPressRef = useRef(null);
   const voiceTimerRef = useRef(null);
 
-  // Device detection
-  const isMobile = () => {
-    return window.matchMedia('(max-width: 768px)').matches
-      || 'ontouchstart' in window
-      || navigator.maxTouchPoints > 0;
-  };
+  // Device detection - cached value
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobileDevice(
+        window.matchMedia('(max-width: 768px)').matches
+        || 'ontouchstart' in window
+        || navigator.maxTouchPoints > 0
+      );
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const totalReactions = Object.entries(message.reactions ?? {}).filter(([, users]) => users.length > 0);
   const activeReactionUsers = message.reactions?.[activeReactionEmoji] ?? [];
@@ -318,6 +326,8 @@ const MessageBubble = memo(function MessageBubble({
       window.removeEventListener('keydown', handleEscape);
     };
   }, [message.id]);
+
+  const isMobile = () => isMobileDevice;
 
   const avatarColor = getAvatarColor(sender?.id);
   const canInlineMeta = !message.deleted && message.type === "text";

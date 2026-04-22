@@ -210,7 +210,7 @@ export default function ChatLayout({
 
   return (
     <div
-      className="h-full min-h-0 w-full overflow-hidden relative"
+      className="h-full min-h-0 w-full relative"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >

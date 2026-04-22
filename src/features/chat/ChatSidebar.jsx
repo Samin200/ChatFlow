@@ -84,7 +84,7 @@ export default function ChatSidebar({
           <div className="flex items-center gap-2.5">
             <ChatFlowIcon className="h-10 w-10" />
             <span className="font-bold text-lg tracking-tight" style={{ color: sidebarText }}>
-              NovaLink
+              ChatFlow
             </span>
           </div>
 

@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "daisyui";
 
 :root {
   --color-primary: #5882f6;
@@ -72,11 +73,13 @@ body,
 @media (max-width: 640px) {
   html, body {
     font-size: 14px;
-    height: 100dvh;
     width: 100vw;
     overflow: hidden;
     /* Prevent default pull-to-refresh on mobile browsers */
     overscroll-behavior-y: contain;
+  }
+  body {
+    height: 100dvh;
   }
 }
 

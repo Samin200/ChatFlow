@@ -30,7 +30,7 @@ export default function ChatMenu({ items = [], menuClassName = "", buttonClassNa
   }, [open]);
 
   return (
-    <div className="relative" ref={containerRef}>
+    <div className="relative z-[100]" ref={containerRef}>
       <button
         onClick={() => setOpen((prev) => !prev)}
         className={`p-2 rounded-xl transition-all ${buttonClassName}`}
@@ -45,7 +45,7 @@ export default function ChatMenu({ items = [], menuClassName = "", buttonClassNa
 
       {open && (
         <div
-          className={`absolute right-0 top-full mt-1 z-[80] min-w-44 rounded-xl border p-1 shadow-xl animate-reaction-pop ${menuClassName}`}
+          className={`absolute right-0 top-full mt-1 z-[9999] min-w-44 rounded-xl border p-1 shadow-xl animate-reaction-pop ${menuClassName}`}
           style={{
             borderColor: "color-mix(in srgb, var(--color-text) 14%, transparent)",
             backgroundColor: "color-mix(in srgb, var(--color-surface) 94%, black 6%)",
