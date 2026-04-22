@@ -3,31 +3,13 @@ import { MoreVertical } from "lucide-react";
 
 export default function ChatMenu({ items = [], menuClassName = "", buttonClassName = "" }) {
   const [open, setOpen] = useState(false);
-  const [menuPosition, setMenuPosition] = useState("bottom");
-  const containerRef = useRef(null);
-  const buttonRef = useRef(null);
-
-  useEffect(() => {
-    if (!open || !buttonRef.current) return;
-
-    const button = buttonRef.current;
-    const buttonRect = button.getBoundingClientRect();
-    const spaceBelow = window.innerHeight - buttonRect.bottom;
-    const menuHeight = items.length * 40 + 16;
-    const spaceAbove = buttonRect.top;
-
-    if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
-      setMenuPosition("top");
-    } else {
-      setMenuPosition("bottom");
-    }
-  }, [open, items.length]);
+  const dropdownRef = useRef(null);
 
   useEffect(() => {
     if (!open) return;
 
     function handleOutsideClick(event) {
-      if (!containerRef.current?.contains(event.target)) {
+      if (!dropdownRef.current?.contains(event.target)) {
         setOpen(false);
       }
     }
@@ -38,24 +20,24 @@ export default function ChatMenu({ items = [], menuClassName = "", buttonClassNa
       }
     }
 
-    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("pointerdown", handleOutsideClick);
     document.addEventListener("keydown", handleEscape);
 
     return () => {
-      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("pointerdown", handleOutsideClick);
       document.removeEventListener("keydown", handleEscape);
     };
   }, [open]);
 
   return (
-    <div className="relative z-[100]" ref={containerRef}>
+    <div className="dropdown dropdown-end relative z-[100]" ref={dropdownRef}>
       <button
-        ref={buttonRef}
-        onClick={() => setOpen((prev) => !prev)}
-        className={`p-2 rounded-xl transition-all ${buttonClassName}`}
+        tabIndex={0}
+        onClick={() => setOpen(!open)}
+        className={`btn btn-ghost btn-sm btn-square ${buttonClassName}`}
         style={{
           color: "var(--color-text-muted)",
-          backgroundColor: open ? "color-mix(in srgb, var(--color-surface) 86%, transparent)" : "transparent",
+          backgroundColor: open ? "rgba(var(--color-surface), 0.86)" : "transparent",
         }}
         aria-label="Open menu"
       >
@@ -63,37 +45,28 @@ export default function ChatMenu({ items = [], menuClassName = "", buttonClassNa
       </button>
 
       {open && (
-        <div
-          className={`absolute ${menuPosition === "top" ? "bottom-full mb-2" : "top-full mt-2"} right-0 z-[9999] min-w-44 rounded-xl border p-1 shadow-xl animate-reaction-pop ${menuClassName}`}
+        <ul
+          tabIndex={0}
+          className="dropdown-content menu menu-sm bg-base-200 rounded-box z-[9999] mt-2 w-52 p-2 shadow-lg border border-base-300 animate-reaction-pop"
           style={{
-            borderColor: "color-mix(in srgb, var(--color-text) 14%, transparent)",
             backgroundColor: "color-mix(in srgb, var(--color-surface) 94%, black 6%)",
+            borderColor: "color-mix(in srgb, var(--color-text) 14%, transparent)",
           }}
         >
           {items.map((item) => (
-            <button
-              key={item.label}
-              onClick={() => {
-                setOpen(false);
-                item.onClick?.();
-              }}
-              className="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors"
-              style={{
-                color: item.danger ? "#fb7185" : "var(--color-text)",
-              }}
-              onMouseEnter={(event) => {
-                event.currentTarget.style.backgroundColor = item.danger
-                  ? "color-mix(in srgb, #fb7185 14%, transparent)"
-                  : "color-mix(in srgb, var(--color-surface) 86%, var(--color-accent) 14%)";
-              }}
-              onMouseLeave={(event) => {
-                event.currentTarget.style.backgroundColor = "transparent";
-              }}
-            >
-              {item.label}
-            </button>
+            <li key={item.label}>
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  item.onClick?.();
+                }}
+                className={item.danger ? "text-error" : ""}
+              >
+                {item.label}
+              </button>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );
