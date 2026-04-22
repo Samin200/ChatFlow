@@ -60,7 +60,6 @@ export default function ChatSidebar({
       label: "New Group",
       onClick: () => setIsNewGroupOpen(true),
     },
-    { label: "Starred", onClick: () => onOpenStarred?.() },
     { label: "Read all", onClick: () => onReadAll?.() },
     { label: "App Theme", onClick: () => onOpenAppTheme?.() },
     { label: "Settings", onClick: () => onOpenSettings?.() },
