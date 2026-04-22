@@ -79,7 +79,7 @@ const MessageBubble = memo(function MessageBubble({
   const [isHovered, setIsHovered] = useState(false);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
   const [showHoverMenu, setShowHoverMenu] = useState(false);
-  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, right: 0 });
+  const [menuPosition, setMenuPosition] = useState({ top: null, left: null, right: null });
   const [opensUpward, setOpensUpward] = useState(false);
   const dropdownRef = useRef(null);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
@@ -470,7 +470,7 @@ const MessageBubble = memo(function MessageBubble({
                 e.stopPropagation();
                 // Close other open menus first
                 document.dispatchEvent(new CustomEvent('closeMessageMenus', { detail: { messageId: message.id } }));
-                const rect = chevronRef.current?.getBoundingClientRect();
+                const rect = e.currentTarget.getBoundingClientRect();
                 if (!rect) return;
 
                 const DROPDOWN_HEIGHT = 280; // approximate dropdown height in px
@@ -826,20 +826,19 @@ const MessageBubble = memo(function MessageBubble({
           {/* Hover Dropdown Menu (Desktop) - fixed positioning, no portal */}
           {showHoverMenu && (
             <>
+              {/* Backdrop */}
               <div
-                className="daisyui modal modal-open fixed inset-0 z-[9998] bg-black/50"
+                className="fixed inset-0 z-[9998] bg-black/30"
                 onClick={() => setShowHoverMenu(false)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Escape') setShowHoverMenu(false);
-                }}
               />
+              {/* Dropdown */}
               <div
                 ref={dropdownRef}
-                className="daisyui modal-box fixed z-[9999] w-72 rounded-2xl border border-white/10 bg-slate-800 shadow-2xl overflow-hidden max-h-[80vh]"
+                className="fixed z-[9999] w-72 rounded-2xl border border-white/10 bg-slate-800 shadow-2xl overflow-hidden max-h-[80vh] animate-reaction-pop"
                 style={{
-                  top: menuPosition.top,
-                  left: menuPosition.left === 'auto' ? 'auto' : menuPosition.left,
-                  right: menuPosition.right === 'auto' ? 'auto' : menuPosition.right,
+                  top: menuPosition.top ?? 100,
+                  left: menuPosition.left ?? undefined,
+                  right: menuPosition.right ?? undefined,
                   transformOrigin: opensUpward ? 'bottom center' : 'top center',
                 }}
               >
