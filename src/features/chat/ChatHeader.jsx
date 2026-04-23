@@ -1,7 +1,7 @@
 import { getInitials, getAvatarColor, formatLastSeen } from "../../utils/helpers.js";
 import {
   ArrowLeft, Phone, Video, UserPlus, Info, Image, Search, Bell, BellOff, Clock,
-  Palette, LayoutTemplate, Trash2, LogOut, Pin, Paperclip, Shield, ShieldOff,
+  Palette, LayoutTemplate, Trash2, LogOut, Pin, Paperclip, Shield, ShieldOff, Download,
 } from "lucide-react";
 import ChatMenu from "./ChatMenu.jsx";
 import ChatFlowIcon from "../../components/ChatFlowIcon.jsx";
@@ -84,8 +84,8 @@ export default function ChatHeader({
     { label: "Chat Theme", icon: Palette, onClick: () => onDirectChatAction?.("chat_theme", contact.id) },
     { label: "Chat Sides", icon: LayoutTemplate, onClick: () => onDirectChatAction?.("chat_sides", contact.id) },
     { label: contact?.blocked ? "Unblock User" : "Block User", icon: contact?.blocked ? ShieldOff : Shield, onClick: () => onDirectChatAction?.("block_user", contact.id), danger: Boolean(!contact?.blocked) },
-    { label: "Clear Chat", onClick: () => onDirectChatAction?.("clear_chat", contact.id), danger: true },
-    { label: "Export Chat", onClick: () => onDirectChatAction?.("export_chat", contact.id) },
+    { label: "Clear Chat", icon: Trash2, onClick: () => onDirectChatAction?.("clear_chat", contact.id), danger: true },
+    { label: "Export Chat", icon: Download, onClick: () => onDirectChatAction?.("export_chat", contact.id) },
   ];
 
   return (
