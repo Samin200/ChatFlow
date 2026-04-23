@@ -1,5 +1,5 @@
 import { memo, useEffect, useMemo, useState } from "react";
-import { Archive, Bell, BellOff, Check, CheckCheck, Clock3, Pin, Search, UserPlus } from "lucide-react";
+import { Archive, Bell, BellOff, Check, CheckCheck, Clock3, Pin, Search, UserPlus, Shield, Palette, Settings } from "lucide-react";
 import { getInitials, getAvatarColor, formatSidebarTime } from "../../utils/helpers.js";
 import ProfileModal from "./ProfileModal.jsx";
 import ChatMenu from "./ChatMenu.jsx";
@@ -52,17 +52,19 @@ export default function ChatSidebar({
       ? [
           {
             label: "Admin Panel",
+            icon: Shield,
             onClick: () => onOpenAdminPanel?.(),
           },
         ]
       : []),
     {
       label: "New Group",
+      icon: UserPlus,
       onClick: () => setIsNewGroupOpen(true),
     },
-    { label: "Read all", onClick: () => onReadAll?.() },
-    { label: "App Theme", onClick: () => onOpenAppTheme?.() },
-    { label: "Settings", onClick: () => onOpenSettings?.() },
+    { label: "Read all", icon: CheckCheck, onClick: () => onReadAll?.() },
+    { label: "App Theme", icon: Palette, onClick: () => onOpenAppTheme?.() },
+    { label: "Settings", icon: Settings, onClick: () => onOpenSettings?.() },
   ];
 
   const sidebarSurface = "var(--color-surface)";

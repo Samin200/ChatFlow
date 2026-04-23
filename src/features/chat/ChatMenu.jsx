@@ -49,7 +49,7 @@ export default function ChatMenu({ items = [], menuClassName = "", buttonClassNa
     <div className="inline-block relative" ref={containerRef}>
       <button
         onClick={() => setOpen(!open)}
-        className={`btn btn-sm btn-square hover:bg-white/5 ${buttonClassName}`}
+        className={`p-2 rounded-full transition-all duration-200 hover:bg-white/10 hover:scale-105 active:scale-95 ${buttonClassName}`}
         style={{
           color: "var(--color-text-muted)",
           backgroundColor: "transparent",
@@ -64,9 +64,8 @@ export default function ChatMenu({ items = [], menuClassName = "", buttonClassNa
       {open && (
         <ul
           tabIndex={-1}
-          className={`menu menu-sm rounded-box absolute w-52 p-2 shadow-lg pointer-events-auto right-0 ${menuClassName}`}
+          className={`absolute w-56 rounded-2xl border border-white/10 bg-slate-800 shadow-2xl overflow-hidden pointer-events-auto right-0 ${menuClassName}`}
           style={{
-            backgroundColor: "color-mix(in srgb, var(--color-surface) 94%, black 6%)",
             zIndex: 9999,
             ...position,
           }}
@@ -78,9 +77,14 @@ export default function ChatMenu({ items = [], menuClassName = "", buttonClassNa
                   setOpen(false);
                   item.onClick?.();
                 }}
-                className={item.danger ? "text-error" : ""}
+                className={`w-full px-4 py-2.5 text-left flex items-center gap-3 transition-colors cursor-pointer pointer-events-auto ${
+                  item.danger
+                    ? "text-rose-300 hover:bg-rose-500/10"
+                    : "text-slate-200 hover:bg-white/7"
+                }`}
               >
-                {item.label}
+                {item.icon && <item.icon className="w-4 h-4" />}
+                <span className="text-[1.05rem] leading-none">{item.label}</span>
               </button>
             </li>
           ))}

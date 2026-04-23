@@ -1,5 +1,8 @@
 import { getInitials, getAvatarColor, formatLastSeen } from "../../utils/helpers.js";
-import { ArrowLeft, Phone, Video } from "lucide-react";
+import {
+  ArrowLeft, Phone, Video, UserPlus, Info, Image, Search, Bell, BellOff, Clock,
+  Palette, LayoutTemplate, Trash2, LogOut, Pin, Paperclip, Shield, ShieldOff,
+} from "lucide-react";
 import ChatMenu from "./ChatMenu.jsx";
 import ChatFlowIcon from "../../components/ChatFlowIcon.jsx";
 
@@ -45,38 +48,42 @@ export default function ChatHeader({
   const avatarColor = getAvatarColor(contact.id);
 
   const groupItems = [
-    { label: "Add Members", onClick: () => onOpenAddMembers?.() },
-    { label: "Group Info", onClick: () => onGroupAction?.("group_info", contact.id) },
-    { label: "Group Media", onClick: () => onGroupAction?.("group_media", contact.id) },
-    { label: "Search", onClick: () => onGroupAction?.("search", contact.id) },
+    { label: "Add Members", icon: UserPlus, onClick: () => onOpenAddMembers?.() },
+    { label: "Group Info", icon: Info, onClick: () => onGroupAction?.("group_info", contact.id) },
+    { label: "Group Media", icon: Image, onClick: () => onGroupAction?.("group_media", contact.id) },
+    { label: "Search", icon: Search, onClick: () => onGroupAction?.("search", contact.id) },
     {
       label: contact?.muted ? "Unmute Notifications" : "Mute Notifications",
+      icon: contact?.muted ? Bell : BellOff,
       onClick: () => onGroupAction?.("mute_notifications", contact.id),
     },
-    { label: "Disappearing Messages", onClick: () => onGroupAction?.("disappearing_messages", contact.id) },
-    { label: "Chat Theme", onClick: () => onGroupAction?.("chat_theme", contact.id) },
-    { label: "Chat Sides", onClick: () => onGroupAction?.("chat_sides", contact.id) },
-    { label: "Clear Chat", onClick: () => onGroupAction?.("clear_chat", contact.id), danger: true },
-    { label: "Exit Group", onClick: () => onGroupAction?.("exit_group", contact.id), danger: true },
+    { label: "Disappearing Messages", icon: Clock, onClick: () => onGroupAction?.("disappearing_messages", contact.id) },
+    { label: "Chat Theme", icon: Palette, onClick: () => onGroupAction?.("chat_theme", contact.id) },
+    { label: "Chat Sides", icon: LayoutTemplate, onClick: () => onGroupAction?.("chat_sides", contact.id) },
+    { label: "Clear Chat", icon: Trash2, onClick: () => onGroupAction?.("clear_chat", contact.id), danger: true },
+    { label: "Exit Group", icon: LogOut, onClick: () => onGroupAction?.("exit_group", contact.id), danger: true },
   ];
 
   const directChatItems = [
     {
       label: "Pinned Messages",
+      icon: Pin,
       onClick: () => onDirectChatAction?.("pinned_messages", contact.id),
     },
-    { label: "Search", onClick: () => onDirectChatAction?.("search", contact.id) },
+    { label: "Search", icon: Search, onClick: () => onDirectChatAction?.("search", contact.id) },
     {
       label: "Media, Links, and Docs",
+      icon: Paperclip,
       onClick: () => onDirectChatAction?.("media_links_docs", contact.id),
     },
     {
       label: "Disappearing Messages",
+      icon: Clock,
       onClick: () => onDirectChatAction?.("disappearing_messages", contact.id),
     },
-    { label: "Chat Theme", onClick: () => onDirectChatAction?.("chat_theme", contact.id) },
-    { label: "Chat Sides", onClick: () => onDirectChatAction?.("chat_sides", contact.id) },
-    { label: contact?.blocked ? "Unblock User" : "Block User", onClick: () => onDirectChatAction?.("block_user", contact.id), danger: Boolean(!contact?.blocked) },
+    { label: "Chat Theme", icon: Palette, onClick: () => onDirectChatAction?.("chat_theme", contact.id) },
+    { label: "Chat Sides", icon: LayoutTemplate, onClick: () => onDirectChatAction?.("chat_sides", contact.id) },
+    { label: contact?.blocked ? "Unblock User" : "Block User", icon: contact?.blocked ? ShieldOff : Shield, onClick: () => onDirectChatAction?.("block_user", contact.id), danger: Boolean(!contact?.blocked) },
     { label: "Clear Chat", onClick: () => onDirectChatAction?.("clear_chat", contact.id), danger: true },
     { label: "Export Chat", onClick: () => onDirectChatAction?.("export_chat", contact.id) },
   ];
