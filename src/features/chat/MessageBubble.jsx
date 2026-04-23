@@ -13,7 +13,6 @@ import {
   ChevronDown,
   Reply,
   Pin,
-  Forward,
   Copy,
   TriangleAlert,
   Trash2,
@@ -527,9 +526,20 @@ const MessageBubble = memo(function MessageBubble({
         </div>
       )}
 
-      {/* Desktop hover reaction button */}
-      {!isMobile() && (isHovered || showReactions) && !message.deleted && (
-        <div className={`flex-shrink-0 self-center ${reactionBtnOrderClass}`}>
+      {/* Desktop hover reply + reaction buttons */}
+      {!isMobile() && (isHovered || showReactions || showHoverMenu) && !message.deleted && (
+        <div className={`flex items-center gap-1 flex-shrink-0 self-center ${reactionBtnOrderClass}`}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowHoverMenu(false);
+            }}
+            className="p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-white/15"
+            style={{ backgroundColor: "rgba(0,0,0,0.2)" }}
+            aria-label="Reply"
+          >
+            <Reply className="w-4 h-4 text-white/80" />
+          </button>
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -951,7 +961,7 @@ const MessageBubble = memo(function MessageBubble({
           {showHoverMenu && createPortal(
             <>
               <div
-                className="fixed inset-0 z-[9998] bg-black/30"
+                className="fixed inset-0 z-[9998] bg-transparent"
                 onClick={() => setShowHoverMenu(false)}
               />
               <div
@@ -982,8 +992,8 @@ const MessageBubble = memo(function MessageBubble({
                   onClick={() => setShowHoverMenu(false)}
                 />
                 <MenuItem
-                  icon={Forward}
-                  label="Forward"
+                  icon={Reply}
+                  label="Reply"
                   onClick={() => setShowHoverMenu(false)}
                 />
                 <MenuItem
@@ -1182,11 +1192,6 @@ const MessageBubble = memo(function MessageBubble({
                   }}
                 />
               )}
-              <MobileSheetActionItem
-                icon={Forward}
-                label="Forward"
-                onClick={() => setShowMobileSheet(false)}
-              />
               <MobileSheetActionItem
                 icon={Pin}
                 label="Pin"
