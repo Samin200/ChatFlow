@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import EmojiPicker from "emoji-picker-react";
 import {
   SmilePlus,
@@ -947,7 +948,7 @@ const MessageBubble = memo(function MessageBubble({
           )}
 
           {/* ─── Hover Dropdown Menu (Desktop) ─── */}
-          {showHoverMenu && (
+          {showHoverMenu && createPortal(
             <>
               <div
                 className="fixed inset-0 z-[9998] bg-black/30"
@@ -965,6 +966,7 @@ const MessageBubble = memo(function MessageBubble({
                     isRightSide ? "right" : "left"
                   }`,
                 }}
+                onClick={(e) => e.stopPropagation()}
               >
                 <MenuItem
                   icon={SmilePlus}
@@ -1040,7 +1042,8 @@ const MessageBubble = memo(function MessageBubble({
                   }}
                 />
               </div>
-            </>
+            </>,
+            document.body
           )}
         </div>
       </div>
