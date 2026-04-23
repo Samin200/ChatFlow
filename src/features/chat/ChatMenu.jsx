@@ -3,21 +3,23 @@ import { MoreVertical } from "lucide-react";
 
 export default function ChatMenu({ items = [], menuClassName = "", buttonClassName = "" }) {
   const [open, setOpen] = useState(false);
-  const [isTop, setIsTop] = useState(false);
+  const [position, setPosition] = useState({ top: "100%", left: "auto" });
   const containerRef = useRef(null);
 
   useEffect(() => {
     if (!open || !containerRef.current) return;
 
     const rect = containerRef.current.getBoundingClientRect();
-    const threshold = window.innerHeight * 0.5;
+    const menuHeight = items.length * 40 + 20;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceRight = window.innerWidth - rect.right;
 
-    if (rect.top < threshold) {
-      setIsTop(true);
+    if (spaceBelow < menuHeight && rect.top > spaceBelow) {
+      setPosition({ top: "auto", bottom: "100%" });
     } else {
-      setIsTop(false);
+      setPosition({ top: "100%", bottom: "auto" });
     }
-  }, [open]);
+  }, [open, items.length]);
 
   useEffect(() => {
     if (!open) return;
@@ -43,19 +45,16 @@ export default function ChatMenu({ items = [], menuClassName = "", buttonClassNa
     };
   }, [open]);
 
-  const dropdownClass = isTop 
-    ? "dropdown dropdown-top dropdown-end" 
-    : "dropdown dropdown-end";
-
   return (
-    <div className={dropdownClass} ref={containerRef}>
+    <div className="inline-block relative" ref={containerRef}>
       <button
-        tabIndex={0}
         onClick={() => setOpen(!open)}
-        className={`btn btn-ghost btn-sm btn-square ${buttonClassName}`}
+        className={`btn btn-sm btn-square hover:bg-white/5 ${buttonClassName}`}
         style={{
           color: "var(--color-text-muted)",
-          backgroundColor: open ? "rgba(var(--color-surface), 0.86)" : "transparent",
+          backgroundColor: "transparent",
+          border: "none",
+          boxShadow: "none",
         }}
         aria-label="Open menu"
       >
@@ -65,10 +64,11 @@ export default function ChatMenu({ items = [], menuClassName = "", buttonClassNa
       {open && (
         <ul
           tabIndex={-1}
-          className="dropdown-content menu menu-sm rounded-box z-[9999] w-52 p-2 shadow-lg border"
+          className={`menu menu-sm rounded-box absolute w-52 p-2 shadow-lg pointer-events-auto right-0 ${menuClassName}`}
           style={{
             backgroundColor: "color-mix(in srgb, var(--color-surface) 94%, black 6%)",
-            borderColor: "color-mix(in srgb, var(--color-text) 14%, transparent)",
+            zIndex: 9999,
+            ...position,
           }}
         >
           {items.map((item) => (
