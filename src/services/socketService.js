@@ -23,8 +23,8 @@ export function connectSocket(token) {
     console.log("[Socket] Connected, re-applying listeners...");
     
     // Explicitly authenticate to join user room
-    const session = JSON.parse(localStorage.getItem('nChatFlow_session') || '{}');
-    const userId = session.id;
+    const user = JSON.parse(localStorage.getItem('nChatFlow_user') || '{}');
+    const userId = user.id;
     if (userId) {
       socket.emit('authenticate', userId);
     }

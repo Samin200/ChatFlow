@@ -192,6 +192,7 @@ export default function ChatLayout({
     groupAddCandidates,
     handleBack,
     inputFocusToken,
+    isMessagesLoading,
     isTyping,
     messages,
     onAddMembersToGroup,

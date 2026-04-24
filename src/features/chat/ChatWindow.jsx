@@ -86,26 +86,7 @@ export default function ChatWindow({
     setShowJumpButton(false);
   }, [activeContactId]);
 
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-
-    const observer = new MutationObserver(() => {
-      if (isInitialLoadRef.current && !isMessagesLoading && messages.length > 0) {
-        scrollToBottom("auto");
-        // Keep checking for a bit in case images load
-        const timer = setTimeout(() => {
-            scrollToBottom("auto");
-            isInitialLoadRef.current = false;
-        }, 100);
-        return () => clearTimeout(timer);
-      }
-    });
-
-    observer.observe(container, { childList: true, subtree: true });
-    return () => observer.disconnect();
-  }, [messages.length, isMessagesLoading]);
-
+  // Scroll to bottom on initial load or when new messages arrive
   useLayoutEffect(() => {
     if (isMessagesLoading || !messages.length) return;
 
@@ -113,8 +94,11 @@ export default function ChatWindow({
       const saved = getSavedScrollPosition?.(activeContactId);
       if (saved !== undefined && saved !== null) {
         scrollContainerRef.current.scrollTop = saved;
-        isInitialLoadRef.current = false;
+      } else {
+        // Use scrollIntoView on the anchor div — most reliable
+        messagesEndRef.current?.scrollIntoView({ behavior: 'auto', block: 'end' });
       }
+      isInitialLoadRef.current = false;
     } else {
       const currentCount = messages.length;
       const prevCount = lastMessagesCountRef.current;
