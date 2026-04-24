@@ -123,13 +123,6 @@ export function useVoiceCall(currentUser) {
       setActiveCall(null);
     };
 
-    const onCallStarted = (data) => {
-      // The caller receives this
-      setActiveCall(prev => ({
-        ...prev,
-        ...data
-      }));
-    };
 
     const unsubIncoming = subscribeSocketEvent('incoming-call', onIncomingCall);
     const unsubStarted = subscribeSocketEvent('call-started', onCallStarted);
