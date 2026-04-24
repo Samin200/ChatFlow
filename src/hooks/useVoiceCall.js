@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { emitSocketEvent, subscribeSocketEvent } from '../services/socketService';
+import { emitSocketEvent, subscribeSocketEvent, connectSocket } from '../services/socketService';
 import { getAuthToken } from '../services/storageService';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
@@ -80,6 +80,9 @@ export function useVoiceCall(currentUser) {
 
   useEffect(() => {
     if (!currentUser?.id) return;
+
+    // Ensure socket is connected before subscribing
+    connectSocket();
 
     const onIncomingCall = (data) => {
       setIncomingCall(data);

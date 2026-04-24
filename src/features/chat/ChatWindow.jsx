@@ -52,9 +52,9 @@ export default function ChatWindow({
 
   const scrollToBottom = useCallback((behavior = "auto") => {
     if (scrollContainerRef.current) {
-      const { scrollHeight, clientHeight } = scrollContainerRef.current;
-      scrollContainerRef.current.scrollTo({
-        top: scrollHeight - clientHeight,
+      const container = scrollContainerRef.current;
+      container.scrollTo({
+        top: container.scrollHeight,
         behavior
       });
     }
@@ -73,10 +73,12 @@ export default function ChatWindow({
       if (saved !== undefined && saved !== null) {
         scrollContainerRef.current.scrollTop = saved;
       } else {
-        // Use requestAnimationFrame to ensure height is calculated after children mount
-        requestAnimationFrame(() => {
-          scrollToBottom("auto");
-        });
+        // Use a small timeout to ensure the DOM has rendered and images started loading
+        setTimeout(() => {
+          if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+          }
+        }, 100);
       }
       isInitialLoadRef.current = false;
     } else {
