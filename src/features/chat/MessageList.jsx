@@ -1,5 +1,7 @@
-import { memo, useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from "react";
 import MessageBubble from "./MessageBubble.jsx";
+import { Pin } from "lucide-react";
+import ChatSkeleton from "./ChatSkeleton.jsx";
 
 export default function MessageList({
   messages,
@@ -12,17 +14,22 @@ export default function MessageList({
   onDelete,
   onToggleStar,
   onOpenImage,
+  onReply,
   saveScrollPosition,
   getSavedScrollPosition,
   chatSide,
   appearance,
+  selectedMessageId,
+  onSelectMessage,
+  isMessagesLoading,
 }) {
-  const bottomRef = useRef(null);
   const containerRef = useRef(null);
+  const messagesEndRef = useRef(null);
   const [showJumpButton, setShowJumpButton] = useState(false);
   const [newMessagesCount, setNewMessagesCount] = useState(0);
   const lastMessagesCountRef = useRef(messages.length);
   const isAutoScrollingRef = useRef(false);
+  const [isAtBottom, setIsAtBottom] = useState(true);
 
   const isNearBottom = useCallback((container, threshold = 50) => {
     if (!container) return true;
@@ -32,12 +39,11 @@ export default function MessageList({
   const groupedRows = useMemo(() => buildMessageRows(messages), [messages]);
 
   const scrollToBottom = useCallback((behavior = "smooth") => {
-    const container = containerRef.current;
-    if (!container) return;
     isAutoScrollingRef.current = true;
-    container.scrollTo({ top: container.scrollHeight, behavior });
+    messagesEndRef.current?.scrollIntoView({ behavior, block: "end" });
     setShowJumpButton(false);
     setNewMessagesCount(0);
+    setIsAtBottom(true);
     // Use a timeout to reset the flag since scroll events might lag
     setTimeout(() => {
       isAutoScrollingRef.current = false;
@@ -50,61 +56,63 @@ export default function MessageList({
     if (isAutoScrollingRef.current) return;
 
     saveScrollPosition?.(activeContactId, container.scrollTop);
-    const nearBottom = isNearBottom(container);
+    const nearBottom = isNearBottom(container, 180); // WhatsApp-style 180px tolerance
+    setIsAtBottom(nearBottom);
     setShowJumpButton(!nearBottom);
     if (nearBottom) {
       setNewMessagesCount(0);
     }
   }, [activeContactId, isNearBottom, saveScrollPosition]);
 
-  // Handle new messages and auto-scroll logic
+  const isInitialLoadRef = useRef(true);
+
+  // Reset initial load state when switching chats
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
+    isInitialLoadRef.current = true;
+    setNewMessagesCount(0);
+  }, [activeContactId]);
 
-    const currentCount = messages.length;
-    const prevCount = lastMessagesCountRef.current;
-    lastMessagesCountRef.current = currentCount;
-
-    if (currentCount > prevCount) {
-      const lastMsg = messages[messages.length - 1];
-      const isMyMessage = lastMsg?.senderId === currentUser?.id;
-      const nearBottom = isNearBottom(container, 150);
-
-      if (isMyMessage || nearBottom) {
-        // Use a small timeout to ensure DOM has updated
-        setTimeout(() => scrollToBottom("smooth"), 50);
-      } else {
-        setNewMessagesCount((prev) => prev + (currentCount - prevCount));
-      }
-    }
-  }, [messages, currentUser?.id, isNearBottom, scrollToBottom]);
-
-  // Handle chat change and initial scroll
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container || !activeContactId) return;
-
-    const previous = getSavedScrollPosition?.(activeContactId);
+  // Use useLayoutEffect for the "instant" feeling on initial load
+  // and handle auto-scroll for new messages
+  useLayoutEffect(() => {
+    // If loading, don't do anything yet
+    if (isMessagesLoading) return;
     
-    if (previous !== undefined && previous !== null) {
-      container.scrollTop = previous;
+    const container = containerRef.current;
+    if (!container || messages.length === 0) return;
+
+    if (isInitialLoadRef.current) {
+      // Instant jump to bottom or saved position on first load after loading finishes
+      const previous = getSavedScrollPosition?.(activeContactId);
+      if (previous !== undefined && previous !== null) {
+        container.scrollTop = previous;
+      } else {
+        scrollToBottom("auto"); // Instant scroll
+      }
+      isInitialLoadRef.current = false;
       setShowJumpButton(!isNearBottom(container));
     } else {
-      // First time opening this chat or no position saved -> scroll to bottom
-      // Use instant scroll for initial load
-      const raf = requestAnimationFrame(() => {
-        scrollToBottom("auto");
-      });
-      return () => cancelAnimationFrame(raf);
-    }
+      // Handle new messages
+      const currentCount = messages.length;
+      const prevCount = lastMessagesCountRef.current;
+      lastMessagesCountRef.current = currentCount;
 
-    setNewMessagesCount(0);
-    const raf = requestAnimationFrame(() => {
-      setShowJumpButton(!isNearBottom(container));
-    });
-    return () => cancelAnimationFrame(raf);
-  }, [activeContactId, getSavedScrollPosition, isNearBottom, scrollToBottom]);
+      if (currentCount > prevCount) {
+        const lastMsg = messages[messages.length - 1];
+        const isMyMessage = lastMsg?.senderId === currentUser?.id;
+
+        if (isMyMessage || isAtBottom) {
+          scrollToBottom("smooth"); // Smooth scroll for new messages
+        } else {
+          setNewMessagesCount((prev) => prev + (currentCount - prevCount));
+        }
+      }
+    }
+  }, [messages, activeContactId, currentUser?.id, getSavedScrollPosition, isNearBottom, scrollToBottom, isMessagesLoading, isAtBottom]);
+
+  if (isMessagesLoading) {
+    return <ChatSkeleton count={6} chatSide={chatSide} />;
+  }
 
   if (!messages.length && !isTyping) {
     return (
@@ -127,12 +135,16 @@ export default function MessageList({
         style={{ overscrollBehavior: "contain", WebkitOverflowScrolling: "touch" }}
       >
         {groupedRows.map(({ key, type, label, message, showAvatar }) => {
-          if (type === "divider") {
+          if (type === "divider" || message?.type === "system") {
+            const displayLabel = type === "divider" ? label : message.text;
             return (
-              <div key={key} className="flex items-center justify-center my-3">
-                <span className="text-[10px] text-slate-500 bg-white/5 border border-white/8 px-3 py-1 rounded-full">
-                  {label}
+              <div key={key} className="flex items-center justify-center my-3 group">
+                <div className="flex-1 h-[1px] bg-white/5 group-hover:bg-white/10 transition-colors mr-3" />
+                <span className="text-[10px] text-slate-500 bg-white/5 border border-white/8 px-3 py-1 rounded-full flex items-center gap-1.5 backdrop-blur-sm">
+                  {message?.type === "system" && <Pin className="w-2.5 h-2.5" style={{ transform: "rotate(30deg)" }} />}
+                  {displayLabel}
                 </span>
+                <div className="flex-1 h-[1px] bg-white/5 group-hover:bg-white/10 transition-colors ml-3" />
               </div>
             );
           }
@@ -155,8 +167,13 @@ export default function MessageList({
               onDelete={onDelete}
               onToggleStar={onToggleStar}
               onOpenImage={onOpenImage}
+              onReply={onReply}
               chatSide={chatSide}
               appearance={appearance}
+              allMessages={messages}
+              isSelected={selectedMessageId === message.id}
+              onSelect={() => onSelectMessage(message)}
+              isSelectionMode={Boolean(selectedMessageId)}
             />
           );
         })}
@@ -173,7 +190,7 @@ export default function MessageList({
             </div>
           </div>
         )}
-        <div ref={bottomRef} />
+        <div ref={messagesEndRef} className="h-px" />
       </div>
 
       {showJumpButton && (
@@ -214,11 +231,16 @@ const MessageRow = memo(function MessageRow({
   onDelete,
   onToggleStar,
   onOpenImage,
+  onReply,
   chatSide,
   appearance,
+  allMessages,
+  isSelected,
+  onSelect,
+  isSelectionMode,
 }) {
   return (
-    <div className="animate-message-in">
+    <div id={`msg-${message.id}`} className="animate-message-in">
       <MessageBubble
         message={message}
         isMine={isMine}
@@ -232,8 +254,13 @@ const MessageRow = memo(function MessageRow({
         onDelete={onDelete}
         onToggleStar={onToggleStar}
         onOpenImage={onOpenImage}
+        onReply={onReply}
         chatSide={chatSide}
         appearance={appearance}
+        allMessages={allMessages}
+        isSelected={isSelected}
+        onSelect={onSelect}
+        isSelectionMode={isSelectionMode}
       />
     </div>
   );
@@ -245,6 +272,16 @@ function buildMessageRows(messages) {
 
   for (let index = 0; index < messages.length; index += 1) {
     const message = messages[index];
+    
+    if (message.type === "system") {
+        rows.push({
+            key: message.id,
+            type: "system",
+            message
+        });
+        continue;
+    }
+
     const currentDate = getDateLabel(message.createdAt);
     if (currentDate !== lastDate) {
       rows.push({ key: `divider-${currentDate}-${index}`, type: "divider", label: currentDate });

@@ -11,6 +11,8 @@ import {
   Type,
   PenLine, RotateCcw,
   X,
+  CornerUpLeft,
+  Check,
 } from "lucide-react";
 import {
   validateImageFile,
@@ -38,6 +40,10 @@ export default function MessageInput({
   onTypingStart,
   onTypingStop,
   theme,
+  replyTo,
+  onCancelReply,
+  editingMessage,
+  onCancelEdit,
 }) {
   const [text, setText] = useState("");
   const [showEmoji, setShowEmoji] = useState(false);
@@ -79,6 +85,16 @@ export default function MessageInput({
     if (!inputFocusToken || disabled) return;
     textareaRef.current?.focus();
   }, [inputFocusToken, disabled]);
+
+  useEffect(() => {
+    if (editingMessage) {
+      setText(editingMessage.text || "");
+      textareaRef.current?.focus();
+    } else {
+      // Clear or restore draft
+      setText("");
+    }
+  }, [editingMessage]);
 
   useEffect(() => {
     if (!showEmoji) return;
@@ -373,6 +389,40 @@ export default function MessageInput({
       className="flex flex-col gap-2 px-2.5 md:px-3 pt-3 pb-[calc(env(safe-area-inset-bottom)+8px)] md:pb-[calc(env(safe-area-inset-bottom)+12px)] border-t border-white/8 backdrop-blur-md sticky bottom-0 z-20"
       style={{ background: "color-mix(in srgb, var(--color-surface) 88%, transparent)" }}
     >
+      {replyTo && (
+        <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white/5 border border-white/10 animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div className="w-1 h-8 rounded-full" style={{ backgroundColor: "var(--color-accent)" }} />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium" style={{ color: "var(--color-accent)" }}>Replying to {replyTo.sender?.displayName || "Unknown"}</p>
+            <p className="text-sm text-slate-300 truncate">{replyTo.text || "Media"}</p>
+          </div>
+          <button
+            onClick={onCancelReply}
+            className="p-1 rounded-full hover:bg-white/10 transition-colors"
+            aria-label="Cancel reply"
+          >
+            <X className="w-4 h-4 text-slate-400" />
+          </button>
+        </div>
+      )}
+
+      {editingMessage && (
+        <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white/5 border border-white/10 animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div className="w-1 h-8 rounded-full" style={{ backgroundColor: "var(--color-accent)" }} />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium" style={{ color: "var(--color-accent)" }}>Editing message</p>
+            <p className="text-sm text-slate-300 truncate">{editingMessage.text || "Media"}</p>
+          </div>
+          <button
+            onClick={onCancelEdit}
+            className="p-1 rounded-full hover:bg-white/10 transition-colors"
+            aria-label="Cancel edit"
+          >
+            <X className="w-4 h-4 text-slate-400" />
+          </button>
+        </div>
+      )}
+
       {storageError && (
         <div className="rounded-xl bg-red-500/10 border border-red-500/30 px-3 py-2 text-red-300 text-xs">
           {storageError}
@@ -455,18 +505,12 @@ export default function MessageInput({
                       searchDisabled
                       skinTonesDisabled
                       lazyLoadEmojis
+                      previewConfig={{ showPreview: false }}
                       onEmojiClick={(emojiData) => insertEmoji(emojiData.emoji)}
                     />
                   ) : (
                     <div className="space-y-3">
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="w-full flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 text-slate-200 py-2 hover:bg-white/10 transition-colors"
-                      >
-                        <ImageIcon className="w-4 h-4" />
-                        Upload image
-                      </button>
+
                       <div className="grid grid-cols-2 gap-2">
                         {filteredGifs.map((gif) => (
                           <button
@@ -535,7 +579,7 @@ export default function MessageInput({
               value={text}
               onChange={handleTextChange}
               onKeyDown={handleKeyDown}
-              placeholder={disabled ? "Select a chat to start messaging" : "Type a message..."}
+              placeholder={disabled ? "Select a chat to start messaging" : editingMessage ? "Edit your message..." : "Type a message..."}
               disabled={disabled}
               rows={1}
                className="flex-1 bg-transparent py-2 text-base outline-none resize-none leading-relaxed max-h-32 overflow-y-auto placeholder-[color:var(--color-text-muted)]"
@@ -568,9 +612,13 @@ export default function MessageInput({
                 "linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-accent) 88%, white 12%))",
               boxShadow: "0 12px 26px color-mix(in srgb, var(--color-accent) 28%, transparent)",
             }}
-            aria-label="Send message"
+            aria-label={editingMessage ? "Update message" : "Send message"}
           >
-            <SendHorizontal className="w-6 h-6" />
+            {editingMessage ? (
+              <Check className="w-6 h-6" />
+            ) : (
+              <SendHorizontal className="w-6 h-6" />
+            )}
           </button>
         )}
       </div>

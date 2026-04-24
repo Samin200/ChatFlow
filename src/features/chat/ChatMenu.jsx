@@ -64,9 +64,10 @@ export default function ChatMenu({ items = [], menuClassName = "", buttonClassNa
       {open && (
         <ul
           tabIndex={-1}
-          className={`absolute w-56 rounded-2xl border border-white/10 bg-slate-800 shadow-2xl overflow-hidden pointer-events-auto right-0 ${menuClassName}`}
+          className={`absolute w-56 rounded-2xl border border-white/10 shadow-2xl overflow-hidden pointer-events-auto right-0 ${menuClassName}`}
           style={{
             zIndex: 9999,
+            backgroundColor: "color-mix(in srgb, var(--color-surface) 96%, black 4%)",
             ...position,
           }}
         >
@@ -79,11 +80,11 @@ export default function ChatMenu({ items = [], menuClassName = "", buttonClassNa
                 }}
                 className={`w-full px-4 py-2.5 text-left flex items-center gap-3 transition-colors cursor-pointer pointer-events-auto ${
                   item.danger
-                    ? "text-rose-300 hover:bg-rose-500/10"
-                    : "text-slate-200 hover:bg-white/7"
+                    ? "text-rose-400 hover:bg-rose-500/10"
+                    : "text-[var(--color-text)] hover:bg-white/7"
                 }`}
               >
-                {item.icon && <item.icon className="w-4 h-4" />}
+                {item.icon && <item.icon className="w-4 h-4" style={{ color: item.danger ? undefined : "var(--color-text-muted)" }} />}
                 <span className="text-[1.05rem] leading-none">{item.label}</span>
               </button>
             </li>

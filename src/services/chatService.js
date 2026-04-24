@@ -29,13 +29,13 @@ export const CHAT_THEMES = {
   midnight: {
     id: "midnight",
     name: "Midnight",
-    chatBackground: "#020617",
-    headerBackground: "rgba(15, 23, 42, 0.7)",
-    inputBackground: "rgba(15, 23, 42, 0.88)",
-    mineBubble: "#14b8a6",
-    theirBubble: "#1e293b",
-    text: "#e2e8f0",
-    textMuted: "#94a3b8",
+    chatBackground: "var(--color-background)",
+    headerBackground: "color-mix(in srgb, var(--color-surface) 70%, transparent)",
+    inputBackground: "color-mix(in srgb, var(--color-surface) 88%, transparent)",
+    mineBubble: "color-mix(in srgb, var(--color-accent) 85%, white)",
+    theirBubble: "var(--color-surface)",
+    text: "var(--color-text)",
+    textMuted: "var(--color-text-muted)",
   },
   ocean: {
     id: "ocean",
@@ -109,6 +109,7 @@ export function normalizeMessage(msg) {
     starredBy: msg.starredBy ?? [],
     mentions: msg.mentions ?? [],
     replyTo: msg.replyTo ?? null,
+    replyToMessageId: msg.replyToMessageId ?? (typeof msg.replyTo === 'string' ? msg.replyTo : msg.replyTo?.id) ?? null,
     sender: msg.sender ?? null,
     linkPreview: msg.linkPreview ?? null,
   };
@@ -257,8 +258,40 @@ export async function getVisibleMessages(userId, chatId) {
         params: { limit: 100 },
       });
       const messages = data?.messages || data?.data?.messages || [];
-      return messages.map(normalizeMessage).filter(Boolean);
-    } catch {
+      const normalized = messages.map(normalizeMessage).filter(Boolean);
+      
+      const all = getChatMessages();
+      // 1. Enrich backend messages with local metadata (pins)
+      const enriched = normalized.map(m => {
+        const cached = all.find(ex => String(ex.id) === String(m.id));
+        if (cached) return { ...m, starredBy: cached.starredBy || [] };
+        return m;
+      });
+
+      // 2. Include local-only messages (system notifications)
+      const localOnly = all.filter(m => 
+        m.type === "system" && 
+        String(m.chatId) === String(chatId)
+      );
+
+      // Merge and sort
+      const merged = [...enriched, ...localOnly].sort((a, b) => 
+        new Date(a.createdAt) - new Date(b.createdAt)
+      );
+
+      // Update cache with any new backend messages
+      let changed = false;
+      normalized.forEach((m) => {
+        if (!all.some((ex) => String(ex.id) === String(m.id))) {
+          all.push(m);
+          changed = true;
+        }
+      });
+      if (changed) setChatMessages(all);
+
+      return merged;
+    } catch (err) {
+      console.error("Failed to fetch backend messages:", err);
       return [];
     }
   }
@@ -278,7 +311,7 @@ export async function getVisibleMessages(userId, chatId) {
 
 // ─── Send Message ─────────────────────────────────────────────────────────────
 
-export async function sendMessage({ senderId, receiverId, text, type = "text", imageData = null, imageFile = null, duration = null, mentions = [] }) {
+export async function sendMessage({ senderId, receiverId, text, type = "text", imageData = null, imageFile = null, duration = null, mentions = [], replyToMessageId = null }) {
   if (USE_BACKEND) {
     try {
       const clientMessageId = `${senderId}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -296,11 +329,18 @@ export async function sendMessage({ senderId, receiverId, text, type = "text", i
         if (mentions && Array.isArray(mentions) && mentions.length > 0) {
           formData.append("mentions", JSON.stringify(mentions));
         }
+        if (replyToMessageId) {
+          formData.append("replyTo", String(replyToMessageId));
+        }
         
         formData.append("file", imageFile, imageFile.name || `image-${Date.now()}.jpg`);
 
         const { data } = await api.post("/api/messages/upload", formData);
         const message = normalizeMessage(data?.message || data?.data?.message);
+        if (message) {
+          const all = getChatMessages();
+          setChatMessages([...all, message]);
+        }
         return { success: true, message };
       }
 
@@ -309,7 +349,8 @@ export async function sendMessage({ senderId, receiverId, text, type = "text", i
         type,
         attachments: [],
         clientMessageId,
-        mentions
+        mentions,
+        replyTo: replyToMessageId
       };
 
       if (type === "image" && imageData) {
@@ -322,6 +363,10 @@ export async function sendMessage({ senderId, receiverId, text, type = "text", i
 
       const { data } = await api.post(`/api/messages/${receiverId}`, payload);
       const message = normalizeMessage(data?.message || data?.data?.message);
+      if (message) {
+        const all = getChatMessages();
+        setChatMessages([...all, message]);
+      }
       return { success: true, message };
     } catch (error) {
       return { success: false, error: error?.response?.data?.message || "Failed to send message." };
@@ -344,6 +389,7 @@ export async function sendMessage({ senderId, receiverId, text, type = "text", i
     deleted: false,
     deletedFor: [],
     starredBy: [],
+    replyToMessageId,
   };
 
   const ok = appendChatMessage(message);
@@ -353,7 +399,7 @@ export async function sendMessage({ senderId, receiverId, text, type = "text", i
 
 // ─── Voice Message ────────────────────────────────────────────────────────────
 
-export async function sendVoiceMessage({ senderId, receiverId, duration = 0, voiceBlob = null }) {
+export async function sendVoiceMessage({ senderId, receiverId, duration = 0, voiceBlob = null, replyToMessageId = null }) {
   if (USE_BACKEND) {
     try {
       emitSocketEvent("join-chat", { chatId: receiverId });
@@ -368,6 +414,7 @@ export async function sendVoiceMessage({ senderId, receiverId, duration = 0, voi
         formData.append("type", "voice");
         formData.append("duration", String(duration));
         formData.append("clientMessageId", String(clientMessageId));
+        if (replyToMessageId) formData.append("replyTo", String(replyToMessageId));
         
         formData.append("file", voiceBlob, `voice-${Date.now()}.${ext}`);
 
@@ -386,6 +433,7 @@ export async function sendVoiceMessage({ senderId, receiverId, duration = 0, voi
         type: "voice",
         attachments: [],
         clientMessageId,
+        replyTo: replyToMessageId,
         metadata: { duration },
       });
       const message = normalizeMessage(data?.message || data?.data?.message);
@@ -715,7 +763,7 @@ export async function deleteMessageForMe(messageId, userId) {
   }
 
   const all = getChatMessages();
-  const idx = all.findIndex((m) => m.id === messageId);
+  const idx = all.findIndex((m) => String(m.id) === String(messageId));
   if (idx < 0) return { success: false, error: "Message not found." };
   all[idx].deletedFor = [...(all[idx].deletedFor ?? []), userId];
   setChatMessages(all);
@@ -854,18 +902,33 @@ export function toggleDisappearingMessages(userId, contactId) {
 
 // ─── Star / Clear / Export ────────────────────────────────────────────────────
 
-export async function toggleStarMessage(messageId, userId) {
+export async function toggleStarMessage(messageId, userId, userName = "Someone", activeChatId = null) {
   if (USE_BACKEND) {
     // Backend doesn't have star endpoint — store locally
   }
 
   const all = getChatMessages();
-  const idx = all.findIndex((m) => m.id === messageId);
+  const idx = all.findIndex((m) => String(m.id) === String(messageId));
   if (idx < 0) return { success: false, error: "Message not found." };
   const msg = all[idx];
   const starredBy = msg.starredBy ?? [];
   const isStarred = starredBy.includes(userId);
+  const willPin = !isStarred;
+
   all[idx] = { ...msg, starredBy: isStarred ? starredBy.filter((u) => u !== userId) : [...starredBy, userId] };
+  
+  if (willPin) {
+    const systemMsg = {
+      id: generateId(),
+      type: "system",
+      text: `${userName} pinned a message`,
+      createdAt: new Date().toISOString(),
+      chatId: activeChatId || msg.chatId || msg.receiverId,
+      senderId: "system"
+    };
+    all.push(systemMsg);
+  }
+
   setChatMessages(all);
   return { success: true, message: all[idx] };
 }

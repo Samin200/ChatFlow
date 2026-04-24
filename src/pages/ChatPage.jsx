@@ -4,8 +4,9 @@ import ChatLayout from "../features/chat/ChatLayout.jsx";
 import { useChat } from "../hooks/useChat.js";
 import AdminPage from "./AdminPage.jsx";
 import { useAuth } from "../hooks/useAuth.js";
-import { useWebRTC } from "../hooks/useWebRTC.js";
-import CallOverlay from "../features/chat/CallOverlay.jsx";
+import { useVoiceCall } from "../hooks/useVoiceCall.js";
+import ActiveVoiceCall from "../features/chat/ActiveVoiceCall.jsx";
+import IncomingCallModal from "../features/chat/IncomingCallModal.jsx";
 import { useCallback } from "react";
 
 export default function ChatPage() {
@@ -68,6 +69,7 @@ export default function ChatPage() {
     handleToggleStar,
     handleEmitTypingStart,
     handleEmitTypingStop,
+    isMessagesLoading,
   } = useChat(currentUser, chatId);
 
   const handleCallEnded = useCallback((endedChatId, durationStr, isVideo) => {
@@ -78,7 +80,7 @@ export default function ChatPage() {
     });
   }, [handleSendMessage]);
 
-  const webRTC = useWebRTC(currentUser, handleCallEnded);
+  const voiceCall = useVoiceCall(currentUser);
 
   // When a contact is selected, navigate to the URL
   function onSelectContact(id) {
@@ -115,13 +117,25 @@ export default function ChatPage() {
       className="h-[100dvh] min-h-0 w-full overflow-hidden relative"
       style={{ backgroundColor: "var(--color-background)", color: "var(--color-text)" }}
     >
-      <CallOverlay {...webRTC} />
+      <IncomingCallModal 
+        incoming={voiceCall.incomingCall} 
+        onAccept={voiceCall.acceptCall} 
+        onReject={voiceCall.rejectCall} 
+      />
+      {voiceCall.callState !== 'idle' && (
+        <ActiveVoiceCall 
+          {...voiceCall.activeCall} 
+          state={voiceCall.callState} 
+          onEnd={voiceCall.endCall} 
+        />
+      )}
       <ChatLayout
         currentUser={currentUser}
         chatSections={chatSections}
         activeContact={activeContact}
         activeContactId={activeContactId}
         messages={messages}
+        isMessagesLoading={isMessagesLoading}
         isTyping={isTyping}
         storageError={storageError}
         soundEnabled={soundEnabled}
@@ -137,6 +151,7 @@ export default function ChatPage() {
         onEditMessage={handleEditMessage}
         onDeleteMessage={handleDeleteMessage}
         onTogglePin={handleTogglePin}
+        onToggleStarMessage={handleToggleStar}
         onToggleMute={handleToggleMute}
         onToggleArchive={handleToggleArchive}
         onToggleSound={() => handleToggleSetting("soundEnabled")}
@@ -156,7 +171,7 @@ export default function ChatPage() {
         onToggleChatSide={handleToggleChatSide}
         onToggleStarMessage={handleToggleStar}
         onInitiateCall={(targetId, isVideo) => {
-          if (targetId) webRTC.initiateCall(targetId, activeContactId, isVideo);
+          if (activeContact) voiceCall.startCall(activeContact, activeContactId);
         }}
         onInviteFriends={handleInviteFriends}
         onInviteByLink={handleInviteByLink}

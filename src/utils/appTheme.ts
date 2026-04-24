@@ -81,6 +81,32 @@ const DARK_AMOLED: AppTheme = {
   accent: "#14b8a6",
 };
 
+const FOREST: AppTheme = {
+  name: "Forest",
+  primary: "#16a34a",
+  secondary: "#4ade80",
+  tertiary: "#bbf7d0",
+  neutral: "#14532d",
+  background: "#0a1a0f",
+  surface: "#0d2518",
+  text: "#dcfce7",
+  textMuted: "#86efac",
+  accent: "#22c55e",
+};
+
+const MIDNIGHT: AppTheme = {
+  name: "Midnight",
+  primary: "#0ea5e9",
+  secondary: "#38bdf8",
+  tertiary: "#7dd3fc",
+  neutral: "#000000",
+  background: "#020202",
+  surface: "#0a0a0a",
+  text: "#f8fafc",
+  textMuted: "#64748b",
+  accent: "#38bdf8",
+};
+
 const CUSTOM_THEME: AppTheme = {
   ...MIDNIGHT_BLUE,
   name: "Custom",
@@ -92,6 +118,8 @@ export const BUILT_IN_THEMES: AppTheme[] = [
   SUNSET_ORANGE,
   LIGHT,
   DARK_AMOLED,
+  FOREST,
+  MIDNIGHT,
   CUSTOM_THEME,
 ];
 
@@ -183,6 +211,7 @@ export function applyTheme(theme: AppTheme) {
   root.style.setProperty("--color-text", safeTheme.text);
   root.style.setProperty("--color-text-muted", safeTheme.textMuted);
   root.style.setProperty("--color-accent", safeTheme.accent);
+  root.style.setProperty("--logo-brightness", safeTheme.name === "Light" ? "0.2" : "1");
   root.setAttribute("data-theme", safeTheme.name.toLowerCase().replace(/\s+/g, "-"));
 }
 

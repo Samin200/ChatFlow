@@ -9,11 +9,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@livekit/components-react": "^2.9.20",
+    "@livekit/components-styles": "^1.2.0",
     "@tailwindcss/typography": "^0.5.19",
     "axios": "^1.15.0",
     "clsx": "2.1.1",
     "date-fns": "^4.1.0",
     "emoji-picker-react": "^4.18.0",
+    "livekit-client": "^2.18.6",
     "lucide-react": "^1.8.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",

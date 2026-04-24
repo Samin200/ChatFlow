@@ -15,10 +15,11 @@
 
 /* Guardrails for built-in light theme contrast. */
 :root[data-theme="light"] {
-  --color-background: #f3f4f6;
+  --color-background: #f8fafc;
   --color-surface: #ffffff;
-  --color-text: #0f172a;
-  --color-text-muted: #475569;
+  --color-text: #1e293b;
+    --color-text-muted: #64748b;
+    --color-accent: #0d9488;
 }
 
 /* ── Scrollbar styling ──────────────────────────────────────────────────────── */
@@ -256,42 +257,88 @@ button:active {
   display: none;
 }
 
+/* ── Theme-Aware Brand Icons (Using Filters to keep the <img> component) ── */
 .chatflow-brand-icon {
-  filter: saturate(1.1) brightness(1.04) drop-shadow(0 0 10px color-mix(in srgb, var(--color-accent) 50%, transparent));
-  transition: filter 220ms ease;
+  transition: filter 0.5s ease, transform 0.5s ease;
 }
 
-.chatflow-icon-shell {
-  transition: background-color 220ms ease, box-shadow 220ms ease;
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-text) 10%, transparent);
+:root[data-theme="midnight"] .chatflow-brand-icon {
+  /* Swapped: Now has Orange effect */
+  filter: saturate(1.8) brightness(1.2) hue-rotate(25deg) drop-shadow(0 0 15px #f97316) !important;
 }
 
-:root[data-theme="midnight-blue"] .chatflow-brand-icon,
-:root[data-theme="custom"] .chatflow-brand-icon {
-  filter: saturate(1.1) brightness(1.04) hue-rotate(0deg) drop-shadow(0 0 10px color-mix(in srgb, var(--color-accent) 50%, transparent));
+:root[data-theme="forest"] .chatflow-brand-icon {
+  /* Swapped: Now has Purple effect */
+  filter: saturate(2.2) brightness(1.2) hue-rotate(275deg) drop-shadow(0 0 18px #d946ef) !important;
 }
 
 :root[data-theme="deep-purple"] .chatflow-brand-icon {
-  filter: saturate(1.22) brightness(1.06) hue-rotate(68deg) drop-shadow(0 0 11px color-mix(in srgb, var(--color-accent) 54%, transparent));
+  /* Swapped: Now has Forest effect (Green) */
+  filter: saturate(1.6) brightness(1.2) hue-rotate(85deg) drop-shadow(0 0 15px #22c55e) !important;
 }
 
 :root[data-theme="sunset-orange"] .chatflow-brand-icon {
-  filter: saturate(1.35) brightness(1.04) hue-rotate(142deg) drop-shadow(0 0 12px color-mix(in srgb, var(--color-accent) 58%, transparent));
+  /* Swapped: Now has Midnight effect (Blue) */
+  filter: saturate(1.8) brightness(1.2) hue-rotate(185deg) drop-shadow(0 0 15px #3b82f6) !important;
 }
 
 :root[data-theme="light"] .chatflow-brand-icon {
-  filter: brightness(0) saturate(100%) invert(39%) sepia(98%) saturate(2000%) hue-rotate(202deg) drop-shadow(0 0 8px color-mix(in srgb, var(--color-primary) 45%, transparent));
-}
-
-:root[data-theme="light"] .chatflow-icon-shell {
-  background-color: color-mix(in srgb, white 96%, var(--color-surface) 4%) !important;
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--color-text) 10%, transparent),
-    0 8px 20px color-mix(in srgb, var(--color-accent) 10%, transparent);
+  /* Default blueish look for light theme */
+  filter: saturate(1.1) brightness(1) drop-shadow(0 0 6px rgba(37, 99, 235, 0.2)) !important;
 }
 
 :root[data-theme="dark-amoled"] .chatflow-brand-icon {
-  filter: saturate(1.16) brightness(1.08) hue-rotate(8deg) drop-shadow(0 0 12px color-mix(in srgb, var(--color-accent) 60%, transparent));
+  filter: saturate(1.1) brightness(1.1) drop-shadow(0 0 12px color-mix(in srgb, var(--color-accent) 50%, transparent)) !important;
+}
+
+:root[data-theme="midnight-blue"] .chatflow-brand-icon {
+  filter: saturate(1.1) brightness(1.1) drop-shadow(0 0 10px color-mix(in srgb, var(--color-accent) 40%, transparent)) !important;
+}
+
+:root[data-theme="custom"] .chatflow-brand-icon {
+  filter: saturate(1.2) brightness(1.1) drop-shadow(0 0 10px color-mix(in srgb, var(--color-accent) 40%, transparent)) !important;
+}
+
+.chatflow-icon-shell {
+  background: linear-gradient(135deg, var(--icon-gradient-start, rgba(255,255,255,0.05)), var(--icon-gradient-end, rgba(255,255,255,0.1))) !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+  transition: background 0.5s ease;
+}
+  
+  /* ── SweetAlert Theming ──────────────────────────────────────────────────────── */
+  .swal2-popup {
+    background: color-mix(in srgb, var(--color-surface) 96%, black 4%) !important;
+    color: var(--color-text) !important;
+    border: 1px solid color-mix(in srgb, var(--color-text) 10%, transparent) !important;
+    border-radius: 2rem !important;
+    backdrop-filter: blur(20px) !important;
+  }
+  
+  .swal2-title {
+    color: var(--color-text) !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.02em !important;
+  }
+  
+  .swal2-html-container {
+    color: var(--color-text-muted) !important;
+  }
+  
+  .swal2-confirm {
+    background-color: var(--color-accent) !important;
+    border-radius: 1rem !important;
+    font-weight: 700 !important;
+    padding: 0.8rem 2rem !important;
+}
+
+.swal2-cancel {
+  background-color: color-mix(in srgb, var(--color-surface) 80%, black 20%) !important;
+  color: var(--color-text) !important;
+  border-radius: 1rem !important;
+}
+
+.swal2-timer-progress-bar {
+  background: var(--color-accent) !important;
 }
 
 /* Theme-aware icon colors for ChatFlowIcon using CSS variables */
@@ -330,6 +377,22 @@ button:active {
   --icon-shadow: rgba(37, 99, 235, 0.3);
 }
 
+/* Light mode bubble refinements */
+:root[data-theme="light"] [class*="rounded-[22px]"] {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+:root[data-theme="light"] .border-white\/5 {
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme="light"] .border-white\/8 {
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme="light"] .border-white\/10 {
+  border-color: rgba(0, 0, 0, 0.08);
+}
 :root[data-theme="midnight-blue"] {
   --icon-gradient-start: #0ea5e9;
   --icon-gradient-end: #6366f1;
@@ -345,6 +408,19 @@ button:active {
   --icon-shadow: color-mix(in srgb, var(--color-accent) 40%, transparent);
 }
 
+:root[data-theme="forest"] {
+  --icon-gradient-start: #16a34a;
+  --icon-gradient-end: #22c55e;
+  --icon-stroke: #ffffff;
+  --icon-shadow: rgba(22, 163, 74, 0.4);
+}
+
+:root[data-theme="midnight"] {
+  --icon-gradient-start: #0ea5e9;
+  --icon-gradient-end: #38bdf8;
+  --icon-stroke: #ffffff;
+  --icon-shadow: rgba(14, 165, 233, 0.4);
+}
 /* Override ChatFlowIcon inline styles using CSS variables */
 .chatflow-icon-shell {
   background: linear-gradient(135deg, var(--icon-gradient-start), var(--icon-gradient-end)) !important;

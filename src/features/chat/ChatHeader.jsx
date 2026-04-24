@@ -2,11 +2,13 @@ import { getInitials, getAvatarColor, formatLastSeen } from "../../utils/helpers
 import {
   ArrowLeft, Phone, Video, UserPlus, Info, Image, Search, Bell, BellOff, Clock,
   Palette, LayoutTemplate, Trash2, LogOut, Pin, Paperclip, Shield, ShieldOff, Download,
+  CornerUpLeft, Star, Forward, Pencil, Copy
 } from "lucide-react";
 import ChatMenu from "./ChatMenu.jsx";
 import ChatFlowIcon from "../../components/ChatFlowIcon.jsx";
 
 export default function ChatHeader({
+  currentUser,
   contact,
   isTyping,
   appTheme,
@@ -22,6 +24,12 @@ export default function ChatHeader({
   onDirectChatAction,
   onInitiateCall,
   headerBackground,
+  selectedMessage,
+  onClearSelection,
+  onReply,
+  onToggleStar,
+  onDelete,
+  onEdit,
 }) {
   const textColor = "var(--color-text)";
   const mutedColor = "var(--color-text-muted)";
@@ -87,6 +95,42 @@ export default function ChatHeader({
     { label: "Clear Chat", icon: Trash2, onClick: () => onDirectChatAction?.("clear_chat", contact.id), danger: true },
     { label: "Export Chat", icon: Download, onClick: () => onDirectChatAction?.("export_chat", contact.id) },
   ];
+
+  if (selectedMessage) {
+    return (
+      <div
+        className="relative z-[10000] flex items-center justify-between px-4 py-3 border-b border-white/8 backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-200"
+        style={{ background: headerBackground ?? "rgba(15, 23, 42, 0.9)", color: textColor }}
+      >
+        <div className="flex items-center gap-6">
+          <button onClick={onClearSelection} className="p-1 -ml-1 rounded-full hover:bg-white/10">
+            <ArrowLeft className="w-6 h-6" />
+          </button>
+        </div>
+
+        <div className="flex items-center gap-1">
+          <button onClick={() => onReply(selectedMessage)} className="p-2.5 rounded-xl hover:bg-white/10" title="Reply">
+            <CornerUpLeft className="w-6 h-6" />
+          </button>
+          <button onClick={() => onToggleStar(selectedMessage.id)} className="p-2.5 rounded-xl hover:bg-white/10" title="Pin">
+            <Pin className="w-6 h-6" />
+          </button>
+          <button onClick={() => onDelete(selectedMessage.id)} className="p-2.5 rounded-xl hover:bg-white/10" title="Delete">
+            <Trash2 className="w-6 h-6" />
+          </button>
+          <button className="p-2.5 rounded-xl hover:bg-white/10" title="Forward">
+            <Forward className="w-6 h-6" />
+          </button>
+          <ChatMenu
+            items={[
+              { label: "Copy", icon: Copy, onClick: () => navigator.clipboard.writeText(selectedMessage.text || "") },
+              ...(selectedMessage.senderId === "me" || selectedMessage._isMine || selectedMessage.senderId === currentUser?.id ? [{ label: "Edit", icon: Pencil, onClick: () => onEdit(selectedMessage) }] : []),
+            ]}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

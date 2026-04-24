@@ -74,6 +74,7 @@ export function useChat(currentUser, chatIdFromRoute) {
   const [contacts, setContacts] = useState([]);
   const [activeContactId, setActiveContactIdState] = useState(chatIdFromRoute || getActiveChatId);
   const [messages, setMessages] = useState([]);
+  const [isMessagesLoading, setIsMessagesLoading] = useState(false);
   const [typingByChat, setTypingByChat] = useState({});
   const [storageError, setStorageError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -325,6 +326,7 @@ export function useChat(currentUser, chatIdFromRoute) {
     let cancelled = false;
 
     const run = async () => {
+      setIsMessagesLoading(true);
       // Parallelize fetching to improve speed
       const [msgs] = await Promise.all([
         getVisibleMessages(currentUser.id, activeContactId),
@@ -335,6 +337,11 @@ export function useChat(currentUser, chatIdFromRoute) {
       if (cancelled) return;
       setMessages(msgs);
       setInputFocusToken((v) => v + 1);
+      
+      // Keep skeleton visible for at least a brief moment to prevent flashing
+      setTimeout(() => {
+        if (!cancelled) setIsMessagesLoading(false);
+      }, 200);
     };
 
     run();
@@ -377,7 +384,7 @@ export function useChat(currentUser, chatIdFromRoute) {
   }, []);
 
   const handleSendMessage = useCallback(
-    async ({ text, type = "text", imageData = null, imageFile = null, duration = null, voiceBlob = null, mentions = [] }) => {
+    async ({ text, type = "text", imageData = null, imageFile = null, duration = null, voiceBlob = null, mentions = [], replyToMessageId = null }) => {
       if (!currentUser || !activeContactId) return;
 
       setStorageError(null);
@@ -402,6 +409,7 @@ export function useChat(currentUser, chatIdFromRoute) {
         starredBy: [],
         sender: currentUser,
         _isTemp: true,
+        replyToMessageId,
       };
 
       // Add temp message to UI immediately (shows clock icon)
@@ -409,7 +417,7 @@ export function useChat(currentUser, chatIdFromRoute) {
 
       const sender =
         type === "voice"
-          ? await sendVoiceMessage({ senderId: currentUser.id, receiverId: activeContactId, duration: duration ?? 0, voiceBlob })
+          ? await sendVoiceMessage({ senderId: currentUser.id, receiverId: activeContactId, duration: duration ?? 0, voiceBlob, replyToMessageId })
           : await sendMessage({
               senderId: currentUser.id,
               receiverId: activeContactId,
@@ -418,7 +426,8 @@ export function useChat(currentUser, chatIdFromRoute) {
               imageData,
               imageFile,
               duration,
-              mentions
+              mentions,
+              replyToMessageId
             });
 
       if (!sender.success) {
@@ -846,14 +855,15 @@ export function useChat(currentUser, chatIdFromRoute) {
     async (messageId) => {
       if (!currentUser?.id || !messageId) return;
       try {
-        const result = await toggleStarMessage(messageId, currentUser.id);
+        const result = await toggleStarMessage(messageId, currentUser.id, currentUser.displayName, activeContactId);
         if (!result.success) {
           setStorageError(result.error);
           return;
         }
-        if (result.message?.id) {
-          setMessages((prev) => prev.map((m) => (m.id === result.message.id ? { ...m, ...result.message } : m)));
-        }
+
+        // Refresh messages to show the "User pinned a message" system notification
+        const refreshed = await getVisibleMessages(currentUser.id, activeContactId);
+        setMessages(refreshed);
         setStorageError(null);
       } catch {
         setStorageError("Could not toggle star.");
@@ -1368,6 +1378,7 @@ export function useChat(currentUser, chatIdFromRoute) {
     activeContact,
     activeContactId,
     messages,
+    isMessagesLoading,
     isTyping,
     typingByChat,
     storageError,

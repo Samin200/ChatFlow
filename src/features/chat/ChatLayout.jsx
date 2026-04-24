@@ -14,6 +14,7 @@ export default function ChatLayout({
   activeContact,
   activeContactId,
   messages,
+  isMessagesLoading,
   isTyping,
   storageError,
   soundEnabled,
@@ -148,6 +149,7 @@ export default function ChatLayout({
           activeContact={activeContact}
           activeContactId={activeContactId}
           messages={messages}
+          isMessagesLoading={isMessagesLoading}
           isTyping={isTyping}
           storageError={storageError}
           onSend={onSend}

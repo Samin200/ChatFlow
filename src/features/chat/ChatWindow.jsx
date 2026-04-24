@@ -4,12 +4,14 @@ import MessageList from "./MessageList.jsx";
 import MessageInput from "./MessageInput.jsx";
 import ContactProfileModal from "./ContactProfileModal.jsx";
 import AddMembersModal from "./AddMembersModal.jsx";
+import Swal from "sweetalert2";
 
 export default function ChatWindow({
   currentUser,
   activeContact,
   activeContactId,
   messages,
+  isMessagesLoading,
   isTyping,
   storageError,
   onSend,
@@ -39,11 +41,38 @@ export default function ChatWindow({
   const [fullscreenImage, setFullscreenImage] = useState(null);
   const [isContactProfileOpen, setIsContactProfileOpen] = useState(false);
   const [isAddMembersOpen, setIsAddMembersOpen] = useState(false);
+  const [replyTo, setReplyTo] = useState(null);
+  const [selectedMessage, setSelectedMessage] = useState(null);
+  const [editingMessage, setEditingMessage] = useState(null);
 
   function handleEdit(message) {
-    const next = window.prompt("Edit message", message.text ?? "");
-    if (next === null) return;
-    onEditMessage?.(message.id, next);
+    setEditingMessage(message);
+    setReplyTo(null);
+  }
+
+  function handleDelete(messageId) {
+    Swal.fire({
+      title: "Delete message?",
+      text: "This action cannot be undone.",
+      icon: "warning",
+      showDenyButton: true,
+      showCancelButton: true,
+      confirmButtonText: "Delete for everyone",
+      denyButtonText: "Delete for me",
+      cancelButtonText: "Cancel",
+      background: "var(--color-surface)",
+      color: "var(--color-text)",
+      confirmButtonColor: "var(--color-primary)",
+      denyButtonColor: "rgba(255,255,255,0.1)",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        onDeleteMessage?.(messageId, "everyone");
+        setSelectedMessage(null);
+      } else if (result.isDenied) {
+        onDeleteMessage?.(messageId, "me");
+        setSelectedMessage(null);
+      }
+    });
   }
 
   const isDefaultChatTheme =
@@ -98,6 +127,7 @@ export default function ChatWindow({
       style={resolvedAppearance?.backgroundStyle ?? { backgroundColor: resolvedTheme?.chatBackground ?? "var(--color-background)" }}
     >
       <ChatHeader
+        currentUser={currentUser}
         contact={activeContact}
         isTyping={isTyping}
         appTheme={appTheme}
@@ -113,6 +143,16 @@ export default function ChatWindow({
         onDirectChatAction={onDirectChatAction}
         onInitiateCall={onInitiateCall}
         headerBackground={resolvedTheme?.headerBackground}
+        selectedMessage={selectedMessage}
+        onClearSelection={() => { setSelectedMessage(null); setEditingMessage(null); }}
+        onReply={(msg) => { setReplyTo(msg); setSelectedMessage(null); }}
+        onToggleStar={(msgId) => { 
+          const id = msgId || selectedMessage?.id;
+          if (id) onToggleStar?.(id); 
+          setSelectedMessage(null); 
+        }}
+        onDelete={(msgId) => { handleDelete(msgId); }}
+        onEdit={(msg) => { handleEdit(msg); setSelectedMessage(null); }}
       />
 
       <MessageList
@@ -120,20 +160,32 @@ export default function ChatWindow({
         currentUser={currentUser}
         activeContact={activeContact}
         activeContactId={activeContactId}
+        isMessagesLoading={isMessagesLoading}
         isTyping={isTyping}
         onReact={onReact}
         onEdit={handleEdit}
-        onDelete={onDeleteMessage}
+        onDelete={handleDelete}
         onToggleStar={onToggleStar}
         onOpenImage={setFullscreenImage}
+        onReply={setReplyTo}
         saveScrollPosition={saveScrollPosition}
         getSavedScrollPosition={getSavedScrollPosition}
         chatSide={resolvedAppearance?.chatSide}
         appearance={resolvedAppearance}
+        selectedMessageId={selectedMessage?.id}
+        onSelectMessage={setSelectedMessage}
       />
 
       <MessageInput
-        onSend={onSend}
+        onSend={(data) => {
+          if (editingMessage) {
+            onEditMessage?.(editingMessage.id, data.text);
+            setEditingMessage(null);
+          } else {
+            onSend?.({ ...data, replyToMessageId: replyTo?.id });
+            setReplyTo(null);
+          }
+        }}
         disabled={!activeContact}
         activeContact={activeContact}
         storageError={storageError}
@@ -141,6 +193,10 @@ export default function ChatWindow({
         theme={resolvedTheme}
         onTypingStart={onTypingStart}
         onTypingStop={onTypingStop}
+        replyTo={replyTo}
+        onCancelReply={() => setReplyTo(null)}
+        editingMessage={editingMessage}
+        onCancelEdit={() => setEditingMessage(null)}
       />
 
       {fullscreenImage && (

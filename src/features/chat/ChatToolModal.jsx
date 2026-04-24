@@ -615,7 +615,7 @@ function StarredBlock({ panel, onToggleStar }) {
   const messages = panel.messages ?? [];
   return (
     <div className="space-y-2">
-      {messages.length === 0 && <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>No starred messages.</p>}
+      {messages.length === 0 && <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>No pinned messages.</p>}
       {messages.map((message) => (
         <div key={message.id} className="rounded-xl border px-3 py-2" style={{ borderColor: "color-mix(in srgb, var(--color-text) 14%, transparent)", backgroundColor: "color-mix(in srgb, var(--color-surface) 88%, transparent)" }}>
           <p className="text-sm truncate" style={{ color: "var(--color-text)" }}>{message.text || message.type}</p>
@@ -630,7 +630,7 @@ function StarredBlock({ panel, onToggleStar }) {
                 backgroundColor: "color-mix(in srgb, var(--color-surface) 88%, transparent)",
               }}
             >
-              Unstar
+              Unpin
             </button>
           </div>
         </div>
@@ -645,6 +645,6 @@ function getTitle(panel) {
   if (panel.type === "chat_sides") return "Chat Sides";
   if (panel.type === "search") return "Search Messages";
   if (panel.type === "media_links_docs") return "Media, Links, and Docs";
-  if (panel.type === "starred") return "Starred Messages";
+  if (panel.type === "starred") return "Pinned Messages";
   return "Chat";
 }
