@@ -85,11 +85,22 @@ export function useVoiceCall(currentUser) {
     connectSocket();
 
     const onIncomingCall = (data) => {
+      console.log('[VoiceCall] Incoming call received:', data);
       setIncomingCall(data);
       setCallState('ringing');
     };
 
+    const onCallStarted = (data) => {
+      console.log('[VoiceCall] Call started (caller side):', data);
+      // The caller receives this
+      setActiveCall(prev => ({
+        ...prev,
+        ...data
+      }));
+    };
+
     const onCallAccepted = async (data) => {
+      console.log('[VoiceCall] Call accepted:', data);
       // The caller receives this
       const tokenData = await fetchToken(data.roomName, currentUser.id);
       if (tokenData) {

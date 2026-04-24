@@ -45,24 +45,45 @@ export default function ChatWindow({
   const [replyTo, setReplyTo] = useState(null);
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [editingMessage, setEditingMessage] = useState(null);
+  const [showJumpButton, setShowJumpButton] = useState(false);
+  const [newMessagesCount, setNewMessagesCount] = useState(0);
   
   const scrollContainerRef = useRef(null);
   const lastMessagesCountRef = useRef(messages.length);
   const isInitialLoadRef = useRef(true);
+  const isAutoScrollingRef = useRef(false);
 
   const scrollToBottom = useCallback((behavior = "auto") => {
     if (scrollContainerRef.current) {
+      isAutoScrollingRef.current = true;
       const container = scrollContainerRef.current;
       container.scrollTo({
         top: container.scrollHeight,
         behavior
       });
+      setShowJumpButton(false);
+      setNewMessagesCount(0);
+      setTimeout(() => { isAutoScrollingRef.current = false; }, 500);
     }
   }, []);
+
+  const handleScroll = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container || isAutoScrollingRef.current) return;
+
+    saveScrollPosition?.(activeContactId, container.scrollTop);
+    
+    // Check if near bottom
+    const isNearBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 150;
+    setShowJumpButton(!isNearBottom);
+    if (isNearBottom) setNewMessagesCount(0);
+  }, [activeContactId, saveScrollPosition]);
 
   // Reset initial load state when switching chats
   useEffect(() => {
     isInitialLoadRef.current = true;
+    setNewMessagesCount(0);
+    setShowJumpButton(false);
   }, [activeContactId]);
 
   useLayoutEffect(() => {
@@ -73,12 +94,13 @@ export default function ChatWindow({
       if (saved !== undefined && saved !== null) {
         scrollContainerRef.current.scrollTop = saved;
       } else {
-        // Use a small timeout to ensure the DOM has rendered and images started loading
+        // More aggressive initial scroll
+        const container = scrollContainerRef.current;
+        container.scrollTop = container.scrollHeight;
+        // Second pass after a small delay for late-rendered content
         setTimeout(() => {
-          if (scrollContainerRef.current) {
-            scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
-          }
-        }, 100);
+          if (container) container.scrollTop = container.scrollHeight;
+        }, 50);
       }
       isInitialLoadRef.current = false;
     } else {
@@ -90,10 +112,12 @@ export default function ChatWindow({
         const lastMsg = messages[messages.length - 1];
         const isMyMessage = lastMsg?.senderId === currentUser?.id;
         const container = scrollContainerRef.current;
-        const isAtBottom = container && (container.scrollTop + container.clientHeight >= container.scrollHeight - 150);
+        const isAtBottom = container && (container.scrollTop + container.clientHeight >= container.scrollHeight - 200);
 
         if (isMyMessage || isAtBottom) {
-          scrollToBottom("smooth");
+          scrollToBottom(isMyMessage ? "auto" : "smooth");
+        } else {
+          setNewMessagesCount(prev => prev + (currentCount - prevCount));
         }
       }
     }
@@ -211,12 +235,8 @@ export default function ChatWindow({
 
       <div 
         ref={scrollContainerRef}
-        onScroll={() => {
-          if (scrollContainerRef.current) {
-            saveScrollPosition?.(activeContactId, scrollContainerRef.current.scrollTop);
-          }
-        }}
-        className="flex-1 overflow-y-auto min-h-0"
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto min-h-0 scroll-smooth"
       >
         <MessageList
           messages={messages}
@@ -238,6 +258,26 @@ export default function ChatWindow({
           scrollToBottom={scrollToBottom}
         />
       </div>
+
+      {showJumpButton && (
+        <div className="absolute bottom-24 right-6 z-30 flex flex-col items-center gap-2 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          {newMessagesCount > 0 && (
+            <div className="bg-emerald-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg border border-white/20 whitespace-nowrap">
+              {newMessagesCount} new message{newMessagesCount !== 1 ? "s" : ""}
+            </div>
+          )}
+          <button
+            onClick={() => scrollToBottom("smooth")}
+            className="group relative w-12 h-12 rounded-full bg-slate-900/90 backdrop-blur-md border border-white/20 text-slate-200 hover:text-white shadow-xl transition-all hover:scale-110 flex items-center justify-center overflow-hidden active:scale-95"
+            aria-label="Jump to latest message"
+          >
+            <span className="text-xl transition-transform group-hover:translate-y-0.5">↓</span>
+            {newMessagesCount > 0 && (
+              <span className="absolute top-0 right-0 w-4 h-4 bg-emerald-500 rounded-full border-2 border-slate-900 animate-pulse" />
+            )}
+          </button>
+        </div>
+      )}
 
       <MessageInput
         onSend={(data) => {
