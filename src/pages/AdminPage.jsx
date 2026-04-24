@@ -570,7 +570,7 @@ function SettingsView({ c }) {
         <h2 className="text-sm font-semibold mb-4">General</h2>
         <div className="space-y-4">
           <div><label className="block text-xs font-medium mb-1.5" style={{ color:c.textMuted }}>App Name</label><input type="text" value={form.name} onChange={set("name")} className="w-full h-9 px-3 rounded-lg border text-sm outline-none" style={{ background:c.bgSubtle, borderColor:c.border, color:c.text }}/></div>
-          <div><label className="block text-xs font-medium mb-1.5" style={{ color:c.textMuted }}>Site URL</label><input type="url" value={form.url} onChange={set("url")} placeholder="https://novalink.example.com" className="w-full h-9 px-3 rounded-lg border text-sm outline-none" style={{ background:c.bgSubtle, borderColor:c.border, color:c.text }}/></div>
+          <div><label className="block text-xs font-medium mb-1.5" style={{ color:c.textMuted }}>Site URL</label><input type="url" value={form.url} onChange={set("url")} placeholder="https://chatflow.example.com" className="w-full h-9 px-3 rounded-lg border text-sm outline-none" style={{ background:c.bgSubtle, borderColor:c.border, color:c.text }}/></div>
           <div><label className="block text-xs font-medium mb-1.5" style={{ color:c.textMuted }}>Max File Upload Size</label><select value={form.upload} onChange={set("upload")} className="w-full h-9 px-3 rounded-lg border text-sm outline-none" style={{ background:c.bgSubtle, borderColor:c.border, color:c.text }}><option>5MB</option><option>10MB</option><option>25MB</option><option>50MB</option></select></div>
         </div>
         <button onClick={save} className="mt-5 h-9 px-4 rounded-lg text-sm font-semibold admin-card-btn" style={{ background:c.accent, color:c.accentFg }}>Save Changes</button>
