@@ -2,6 +2,7 @@ import { useState } from "react";
 import ChatHeader from "./ChatHeader.jsx";
 import MessageList from "./MessageList.jsx";
 import MessageInput from "./MessageInput.jsx";
+import { useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import ContactProfileModal from "./ContactProfileModal.jsx";
 import AddMembersModal from "./AddMembersModal.jsx";
 import Swal from "sweetalert2";
@@ -44,6 +45,57 @@ export default function ChatWindow({
   const [replyTo, setReplyTo] = useState(null);
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [editingMessage, setEditingMessage] = useState(null);
+  
+  const scrollContainerRef = useRef(null);
+  const lastMessagesCountRef = useRef(messages.length);
+  const isInitialLoadRef = useRef(true);
+
+  const scrollToBottom = useCallback((behavior = "auto") => {
+    if (scrollContainerRef.current) {
+      const { scrollHeight, clientHeight } = scrollContainerRef.current;
+      scrollContainerRef.current.scrollTo({
+        top: scrollHeight - clientHeight,
+        behavior
+      });
+    }
+  }, []);
+
+  // Reset initial load state when switching chats
+  useEffect(() => {
+    isInitialLoadRef.current = true;
+  }, [activeContactId]);
+
+  useLayoutEffect(() => {
+    if (isMessagesLoading || !messages.length) return;
+
+    if (isInitialLoadRef.current) {
+      const saved = getSavedScrollPosition?.(activeContactId);
+      if (saved !== undefined && saved !== null) {
+        scrollContainerRef.current.scrollTop = saved;
+      } else {
+        // Use requestAnimationFrame to ensure height is calculated after children mount
+        requestAnimationFrame(() => {
+          scrollToBottom("auto");
+        });
+      }
+      isInitialLoadRef.current = false;
+    } else {
+      const currentCount = messages.length;
+      const prevCount = lastMessagesCountRef.current;
+      lastMessagesCountRef.current = currentCount;
+
+      if (currentCount > prevCount) {
+        const lastMsg = messages[messages.length - 1];
+        const isMyMessage = lastMsg?.senderId === currentUser?.id;
+        const container = scrollContainerRef.current;
+        const isAtBottom = container && (container.scrollTop + container.clientHeight >= container.scrollHeight - 150);
+
+        if (isMyMessage || isAtBottom) {
+          scrollToBottom("smooth");
+        }
+      }
+    }
+  }, [messages, isMessagesLoading, activeContactId, getSavedScrollPosition, scrollToBottom, currentUser?.id]);
 
   function handleEdit(message) {
     setEditingMessage(message);
@@ -155,26 +207,35 @@ export default function ChatWindow({
         onEdit={(msg) => { handleEdit(msg); setSelectedMessage(null); }}
       />
 
-      <MessageList
-        messages={messages}
-        currentUser={currentUser}
-        activeContact={activeContact}
-        activeContactId={activeContactId}
-        isMessagesLoading={isMessagesLoading}
-        isTyping={isTyping}
-        onReact={onReact}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        onToggleStar={onToggleStar}
-        onOpenImage={setFullscreenImage}
-        onReply={setReplyTo}
-        saveScrollPosition={saveScrollPosition}
-        getSavedScrollPosition={getSavedScrollPosition}
-        chatSide={resolvedAppearance?.chatSide}
-        appearance={resolvedAppearance}
-        selectedMessageId={selectedMessage?.id}
-        onSelectMessage={setSelectedMessage}
-      />
+      <div 
+        ref={scrollContainerRef}
+        onScroll={() => {
+          if (scrollContainerRef.current) {
+            saveScrollPosition?.(activeContactId, scrollContainerRef.current.scrollTop);
+          }
+        }}
+        className="flex-1 overflow-y-auto min-h-0"
+      >
+        <MessageList
+          messages={messages}
+          currentUser={currentUser}
+          activeContact={activeContact}
+          activeContactId={activeContactId}
+          isMessagesLoading={isMessagesLoading}
+          isTyping={isTyping}
+          onReact={onReact}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onToggleStar={onToggleStar}
+          onOpenImage={setFullscreenImage}
+          onReply={setReplyTo}
+          chatSide={resolvedAppearance?.chatSide}
+          appearance={resolvedAppearance}
+          selectedMessageId={selectedMessage?.id}
+          onSelectMessage={setSelectedMessage}
+          scrollToBottom={scrollToBottom}
+        />
+      </div>
 
       <MessageInput
         onSend={(data) => {

@@ -31,10 +31,10 @@ export function useVoiceCall(currentUser) {
   };
 
   const startCall = useCallback(async (contact, chatId) => {
+    if (!contact?.id || !chatId) return;
     setCallState('calling');
     emitSocketEvent('start-call', { to: contact.id, chatId });
-    
-    // Set initial active call state (caller side)
+    // We wait for 'call-started' to set full activeCall data
     setActiveCall({ contact, chatId });
   }, []);
 
@@ -109,13 +109,23 @@ export function useVoiceCall(currentUser) {
       setActiveCall(null);
     };
 
+    const onCallStarted = (data) => {
+      // The caller receives this
+      setActiveCall(prev => ({
+        ...prev,
+        ...data
+      }));
+    };
+
     const unsubIncoming = subscribeSocketEvent('incoming-call', onIncomingCall);
+    const unsubStarted = subscribeSocketEvent('call-started', onCallStarted);
     const unsubAccepted = subscribeSocketEvent('call-accepted', onCallAccepted);
     const unsubRejected = subscribeSocketEvent('call-rejected', onCallRejected);
     const unsubEnded = subscribeSocketEvent('call-ended', onCallEnded);
 
     return () => {
       unsubIncoming();
+      unsubStarted();
       unsubAccepted();
       unsubRejected();
       unsubEnded();
