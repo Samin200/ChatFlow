@@ -86,6 +86,26 @@ export default function ChatWindow({
     setShowJumpButton(false);
   }, [activeContactId]);
 
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const observer = new MutationObserver(() => {
+      if (isInitialLoadRef.current && !isMessagesLoading && messages.length > 0) {
+        container.scrollTop = container.scrollHeight;
+        // Keep checking for a bit in case images load
+        const timer = setTimeout(() => {
+            container.scrollTop = container.scrollHeight;
+            isInitialLoadRef.current = false;
+        }, 100);
+        return () => clearTimeout(timer);
+      }
+    });
+
+    observer.observe(container, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [messages.length, isMessagesLoading]);
+
   useLayoutEffect(() => {
     if (isMessagesLoading || !messages.length) return;
 
@@ -93,16 +113,8 @@ export default function ChatWindow({
       const saved = getSavedScrollPosition?.(activeContactId);
       if (saved !== undefined && saved !== null) {
         scrollContainerRef.current.scrollTop = saved;
-      } else {
-        // More aggressive initial scroll
-        const container = scrollContainerRef.current;
-        container.scrollTop = container.scrollHeight;
-        // Second pass after a small delay for late-rendered content
-        setTimeout(() => {
-          if (container) container.scrollTop = container.scrollHeight;
-        }, 50);
+        isInitialLoadRef.current = false;
       }
-      isInitialLoadRef.current = false;
     } else {
       const currentCount = messages.length;
       const prevCount = lastMessagesCountRef.current;
