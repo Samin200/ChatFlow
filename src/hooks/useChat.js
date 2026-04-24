@@ -1316,8 +1316,8 @@ export function useChat(currentUser, chatIdFromRoute) {
   }, []);
 
   const getSavedScrollPosition = useCallback((contactId) => {
-    if (!contactId) return 0;
-    return scrollPositionsRef.current.get(contactId) ?? 0;
+    if (!contactId) return null;
+    return scrollPositionsRef.current.get(contactId) ?? null;
   }, []);
 
   const filteredContacts = useMemo(() => {
