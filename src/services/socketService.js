@@ -21,6 +21,14 @@ export function connectSocket(token) {
 
   socket.on("connect", () => {
     console.log("[Socket] Connected, re-applying listeners...");
+    
+    // Explicitly authenticate to join user room
+    const session = JSON.parse(localStorage.getItem('nChatFlow_session') || '{}');
+    const userId = session.id;
+    if (userId) {
+      socket.emit('authenticate', userId);
+    }
+
     // Re-apply all registered listeners on every connection
     eventRegistry.forEach((callbacks, event) => {
       socket.off(event); // Avoid duplicates

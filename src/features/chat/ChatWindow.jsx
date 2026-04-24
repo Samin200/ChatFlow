@@ -49,17 +49,17 @@ export default function ChatWindow({
   const [newMessagesCount, setNewMessagesCount] = useState(0);
   
   const scrollContainerRef = useRef(null);
+  const messagesEndRef = useRef(null);
   const lastMessagesCountRef = useRef(messages.length);
   const isInitialLoadRef = useRef(true);
   const isAutoScrollingRef = useRef(false);
 
   const scrollToBottom = useCallback((behavior = "auto") => {
-    if (scrollContainerRef.current) {
+    if (messagesEndRef.current) {
       isAutoScrollingRef.current = true;
-      const container = scrollContainerRef.current;
-      container.scrollTo({
-        top: container.scrollHeight,
-        behavior
+      messagesEndRef.current.scrollIntoView({ 
+        behavior, 
+        block: 'end' 
       });
       setShowJumpButton(false);
       setNewMessagesCount(0);
@@ -92,10 +92,10 @@ export default function ChatWindow({
 
     const observer = new MutationObserver(() => {
       if (isInitialLoadRef.current && !isMessagesLoading && messages.length > 0) {
-        container.scrollTop = container.scrollHeight;
+        scrollToBottom("auto");
         // Keep checking for a bit in case images load
         const timer = setTimeout(() => {
-            container.scrollTop = container.scrollHeight;
+            scrollToBottom("auto");
             isInitialLoadRef.current = false;
         }, 100);
         return () => clearTimeout(timer);
@@ -269,6 +269,7 @@ export default function ChatWindow({
           onSelectMessage={setSelectedMessage}
           scrollToBottom={scrollToBottom}
         />
+        <div ref={messagesEndRef} className="h-px w-full" />
       </div>
 
       {showJumpButton && (
