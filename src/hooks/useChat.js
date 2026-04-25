@@ -279,11 +279,46 @@ export function useChat(currentUser, chatIdFromRoute) {
         const chatId = payload?.meta?.chatId;
         if (chatId) setTypingState(chatId, false);
       }),
-      subscribeSocketEvent("user:online", () => {
-        throttledRefreshContacts();
+      subscribeSocketEvent("user:online", (payload) => {
+        const userId = payload?.data?.user?.id || payload?.userId;
+        if (userId) {
+          setContacts(prev => prev.map(c => {
+            const cId = c.otherUserId || c.id;
+            if (String(cId) === String(userId)) {
+              return { ...c, online: true, presenceStatus: 'online' };
+            }
+            return c;
+          }));
+        } else {
+          throttledRefreshContacts();
+        }
       }),
-      subscribeSocketEvent("user:offline", () => {
-        throttledRefreshContacts();
+      subscribeSocketEvent("user:offline", (payload) => {
+        const userId = payload?.data?.user?.id || payload?.userId;
+        if (userId) {
+          setContacts(prev => prev.map(c => {
+            const cId = c.otherUserId || c.id;
+            if (String(cId) === String(userId)) {
+              return { ...c, online: false, presenceStatus: 'offline', lastSeen: new Date().toISOString() };
+            }
+            return c;
+          }));
+        } else {
+          throttledRefreshContacts();
+        }
+      }),
+      subscribeSocketEvent("user:presence", (payload) => {
+        const userId = payload?.data?.userId || payload?.userId;
+        const status = payload?.data?.status || payload?.status;
+        if (userId && status) {
+          setContacts(prev => prev.map(c => {
+            const cId = c.otherUserId || c.id;
+            if (String(cId) === String(userId)) {
+              return { ...c, online: status !== 'offline', presenceStatus: status };
+            }
+            return c;
+          }));
+        }
       }),
       subscribeSocketEvent("message:status", (payload) => {
         const { messageId, status, chatId } = payload?.data || {};
@@ -437,7 +472,7 @@ export function useChat(currentUser, chatIdFromRoute) {
       setMessages((prev) => [...prev, tempMessage]);
 
       // Encrypt for transmission
-      const encryptedText = type === "text" ? await encryptMessage(text, activeContactId) : text;
+      const encryptedText = text; // E2EE disabled — send plain text
 
       const sender =
         type === "voice"

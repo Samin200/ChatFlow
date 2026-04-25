@@ -170,15 +170,12 @@ export default function ChatHeader({
           <div
             className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2"
             style={{
-              backgroundColor: contact?.online
-                ? contact?.presenceStatus === "dnd"
-                  ? "#ef4444"
-                  : contact?.presenceStatus === "away"
-                    ? "#f59e0b"
-                    : contact?.presenceStatus === "offline"
-                      ? "#6b7280"
-                      : "#22c55e"
-                : "transparent",
+              backgroundColor:
+                (contact?.presenceStatus || (contact?.online ? 'online' : 'offline')) === 'online'
+                  ? '#22c55e'
+                  : (contact?.presenceStatus || (contact?.online ? 'online' : 'offline')) === 'idle'
+                    ? '#f59e0b'
+                    : '#6b7280',
               borderColor: "var(--color-surface)",
             }}
           />
@@ -187,13 +184,14 @@ export default function ChatHeader({
         <div className="min-w-0">
           <h2 className="font-semibold text-[1.1rem] md:text-sm leading-tight truncate flex items-center gap-1.5" style={{ color: textColor }}>
             {contact.displayName}
-            <Lock className="w-3 h-3 opacity-30 shrink-0" />
           </h2>
           <p className="text-[0.7rem] md:text-xs leading-tight mt-0.5">
             {isTyping ? (
               <span className="text-teal-400 font-medium">typing…</span>
-            ) : contact.online ? (
+            ) : (contact?.presenceStatus || (contact?.online ? 'online' : 'offline')) === 'online' ? (
               <span className="text-emerald-400">online</span>
+            ) : (contact?.presenceStatus || (contact?.online ? 'online' : 'offline')) === 'idle' ? (
+              <span className="text-amber-400">idle</span>
             ) : (
               <span style={{ color: mutedColor }}>{formatLastSeen(contact.lastSeen)}</span>
             )}
@@ -211,14 +209,7 @@ export default function ChatHeader({
         >
           <Phone className="w-5.5 h-5.5 md:w-5 md:h-5" />
         </button>
-        <button
-          onClick={() => onInitiateCall?.(contact.otherUserId || contact.id, true)}
-          className="p-2.5 md:p-2 rounded-xl hover:bg-white/5 transition-all active:scale-95"
-          style={{ color: mutedColor }}
-          title="Start video call"
-        >
-          <Video className="w-5.5 h-5.5 md:w-5 md:h-5" />
-        </button>
+        {/* Video call temporarily disabled */}
         <ChatMenu
           menuClassName="z-[85]"
           items={

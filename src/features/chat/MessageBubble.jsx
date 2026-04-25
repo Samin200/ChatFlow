@@ -937,7 +937,6 @@ const MessageBubble = memo(function MessageBubble({
                     {message.starredBy?.length > 0 && (
                       <Pin className="w-2.5 h-2.5 mr-1" style={{ transform: "rotate(30deg)" }} />
                     )}
-                    <Lock className="w-2.5 h-2.5 mr-1 opacity-40 shrink-0" />
                     {formatMessageTime(message.createdAt)}
                   </span>
                   <div className="flex items-center justify-center shrink-0 ml-1 w-4 h-4 relative">
@@ -991,7 +990,6 @@ const MessageBubble = memo(function MessageBubble({
                   {message.starredBy?.length > 0 && (
                     <Pin className="w-2.5 h-2.5 mr-1" style={{ transform: "rotate(30deg)" }} />
                   )}
-                  <Lock className="w-2.5 h-2.5 mr-1 opacity-40 shrink-0" />
                   {formatMessageTime(message.createdAt)}
                 </span>
                 <div className="flex items-center justify-center shrink-0 ml-1 w-4 h-4 relative">

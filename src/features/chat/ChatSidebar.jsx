@@ -607,7 +607,9 @@ const ChatItem = memo(function ChatItem({
         ? "Image"
         : lastMsg.type === "voice"
           ? "Voice message"
-          : lastMsg.text?.slice(0, 40) + (lastMsg.text?.length > 40 ? "..." : "")
+          : lastMsg.text?.startsWith('e2ee:')
+            ? "🔒 Encrypted message"
+            : lastMsg.text?.slice(0, 40) + (lastMsg.text?.length > 40 ? "..." : "")
     : "Start a conversation";
 
   return (
@@ -751,7 +753,7 @@ function SidebarStatusTick({ status }) {
 
 function getPresenceDotColor(status) {
   if (status === "dnd") return "#ef4444";
-  if (status === "away") return "#f59e0b";
+  if (status === "idle" || status === "away") return "#f59e0b";
   if (status === "offline") return "#6b7280";
   return "#22c55e";
 }

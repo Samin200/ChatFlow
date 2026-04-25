@@ -45,6 +45,28 @@ export function connectSocket(token) {
     }
   });
 
+  // Presence tracking: idle when tab hidden, online when visible
+  if (!window.__chatflow_presence_bound) {
+    window.__chatflow_presence_bound = true;
+
+    const emitPresence = (status) => {
+      if (socket?.connected) {
+        socket.emit('presence:update', { status });
+      }
+    };
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        emitPresence('idle');
+      } else {
+        emitPresence('online');
+      }
+    });
+
+    window.addEventListener('focus', () => emitPresence('online'));
+    window.addEventListener('blur', () => emitPresence('idle'));
+  }
+
   return socket;
 }
 
