@@ -31,8 +31,13 @@ export function useVoiceCall(currentUser) {
   };
 
   const startCall = useCallback(async (contact, chatId) => {
-    if (!contact?.id || !chatId) return;
+    console.log("[DEBUG-VOICE] startCall invoked:", { contactId: contact?.id, chatId });
+    if (!contact?.id || !chatId) {
+      console.warn("[DEBUG-VOICE] Missing contact or chatId");
+      return;
+    }
     setCallState('calling');
+    console.log("[DEBUG-VOICE] Emitting 'start-call'");
     emitSocketEvent('start-call', { to: contact.id, chatId });
     // We wait for 'call-started' to set full activeCall data
     setActiveCall({ contact, chatId });
@@ -85,7 +90,7 @@ export function useVoiceCall(currentUser) {
     connectSocket();
 
     const onIncomingCall = (data) => {
-      console.log('[VoiceCall] Incoming call received:', data);
+      console.log('[DEBUG-VOICE] !!! RECEIVED incoming-call event !!!', data);
       setIncomingCall(data);
       setCallState('ringing');
     };

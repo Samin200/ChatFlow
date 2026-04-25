@@ -25,7 +25,9 @@ export function connectSocket(token) {
     // Explicitly authenticate to join user room
     const user = JSON.parse(localStorage.getItem('nChatFlow_user') || '{}');
     const userId = user.id;
+    console.log("[DEBUG-SOCKET] Auth check: userId =", userId);
     if (userId) {
+      console.log("[DEBUG-SOCKET] Emitting 'authenticate' for", userId);
       socket.emit('authenticate', userId);
     }
 
