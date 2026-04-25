@@ -1,5 +1,5 @@
 /**
- * useAuth.js
+ * useAuth.jsx
  * Manages authentication state for the current user session.
  * Exports AuthProvider for global state management.
  */

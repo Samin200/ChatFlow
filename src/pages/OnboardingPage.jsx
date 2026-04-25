@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import OnboardingFlow from "../features/onboarding/OnboardingFlow.jsx";
 import ChatFlowIcon from "../components/ChatFlowIcon.jsx";
-import { useAuth } from "../hooks/useAuth.js";
+import { useAuth } from "../hooks/useAuth.jsx";
 
 export default function OnboardingPage() {
   const location = useLocation();

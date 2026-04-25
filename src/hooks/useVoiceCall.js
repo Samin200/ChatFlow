@@ -88,6 +88,14 @@ export function useVoiceCall(currentUser) {
 
     const onIncomingCall = (data) => {
       console.log('[VoiceCall] Incoming call received:', data);
+      
+      // If already in a call, auto-reject with busy status
+      if (activeCallRef.current || callState !== 'idle') {
+        console.log('[VoiceCall] Busy, auto-rejecting call');
+        emitSocketEvent('reject-call', { from: data.from, callId: data.callId, reason: 'busy' });
+        return;
+      }
+
       setIncomingCall(data);
       setCallState('ringing');
     };
@@ -115,7 +123,8 @@ export function useVoiceCall(currentUser) {
       }
     };
 
-    const onCallRejected = () => {
+    const onCallRejected = (data) => {
+      console.log('[VoiceCall] Call rejected:', data?.reason || 'declined');
       setCallState('idle');
       setActiveCall(null);
     };
@@ -125,12 +134,18 @@ export function useVoiceCall(currentUser) {
       setActiveCall(null);
     };
 
+    const onCallFailed = (data) => {
+      console.warn('[VoiceCall] Call failed:', data.message);
+      setCallState('idle');
+      setActiveCall(null);
+    };
 
     const unsubIncoming = subscribeSocketEvent('incoming-call', onIncomingCall);
     const unsubStarted = subscribeSocketEvent('call-started', onCallStarted);
     const unsubAccepted = subscribeSocketEvent('call-accepted', onCallAccepted);
     const unsubRejected = subscribeSocketEvent('call-rejected', onCallRejected);
     const unsubEnded = subscribeSocketEvent('call-ended', onCallEnded);
+    const unsubFailed = subscribeSocketEvent('call-failed', onCallFailed);
 
     return () => {
       unsubIncoming();
@@ -138,6 +153,7 @@ export function useVoiceCall(currentUser) {
       unsubAccepted();
       unsubRejected();
       unsubEnded();
+      unsubFailed();
     };
   }, [currentUser?.id]);
 

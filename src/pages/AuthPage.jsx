@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import LoginForm from "../features/auth/LoginForm.jsx";
 import SignupForm from "../features/auth/SignupForm.jsx";
 import ChatFlowIcon from "../components/ChatFlowIcon.jsx";
-import { useAuth } from "../hooks/useAuth.js";
+import { useAuth } from "../hooks/useAuth.jsx";
 
 export default function AuthPage({ mode: initialMode = "login" }) {
   const [mode, setMode] = useState(initialMode);

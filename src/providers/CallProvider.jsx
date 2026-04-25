@@ -1,5 +1,5 @@
 import React, { createContext, useContext } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../hooks/useAuth.jsx';
 import { useVoiceCall } from '../hooks/useVoiceCall';
 import IncomingCallModal from '../features/chat/IncomingCallModal';
 import ActiveVoiceCall from '../features/chat/ActiveVoiceCall';
