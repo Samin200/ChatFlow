@@ -790,16 +790,6 @@ const MessageBubble = memo(function MessageBubble({
               style={tailStyle}
             />
 
-            {/* Absolute Chevron - doesn't affect bubble width */}
-            {(isHovered || showHoverMenu) && !message.deleted && (
-              <button
-                onClick={handleChevronClick}
-                className="absolute top-2 right-2 z-[10] flex items-center justify-center transition-all bg-black/20 hover:bg-black/40 rounded-full w-4 h-4"
-              >
-                <ChevronDown size={10} color="white" />
-              </button>
-            )}
-
             {/* Reply preview */}
             {replyTarget && !message.deleted && (
               <div
@@ -928,9 +918,22 @@ const MessageBubble = memo(function MessageBubble({
                     )}
                     {formatMessageTime(message.createdAt)}
                   </span>
-                  <div className="flex items-center justify-center shrink-0 ml-0.5 min-w-[14px]">
-                    <div className="flex items-center justify-center shrink-0 ml-0.5 min-w-[14px]">
-                      {isMine && (
+                  <div className="flex items-center justify-center shrink-0 ml-1 w-4 h-4 relative">
+                    {(isHovered || showHoverMenu) && !message.deleted ? (
+                      <button
+                        onClick={handleChevronClick}
+                        className="flex items-center justify-center transition-all absolute inset-0"
+                        style={{
+                          background: "rgba(255,255,255,0.15)",
+                          borderRadius: "50%",
+                          border: "none",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <ChevronDown size={10} color="white" />
+                      </button>
+                    ) : (
+                      isMine && (
                         <StatusTicks
                           status={message.status}
                           compact
@@ -938,8 +941,8 @@ const MessageBubble = memo(function MessageBubble({
                             appearance?.theme?.accent || "var(--color-accent)"
                           }
                         />
-                      )}
-                    </div>
+                      )
+                    )}
                   </div>
                 </div>
               </div>
@@ -968,9 +971,24 @@ const MessageBubble = memo(function MessageBubble({
                   )}
                   {formatMessageTime(message.createdAt)}
                 </span>
-                <div className="flex items-center justify-center shrink-0 ml-0.5 min-w-[14px]">
-                  <div className="flex items-center justify-center shrink-0 ml-0.5 min-w-[14px]">
-                    {isMine && (
+                <div className="flex items-center justify-center shrink-0 ml-1 w-4 h-4 relative">
+                  {(isHovered || showHoverMenu) && !message.deleted ? (
+                    <button
+                      onClick={handleChevronClick}
+                      className="flex items-center justify-center transition-all"
+                      style={{
+                        width: 14,
+                        height: 14,
+                        background: "rgba(255,255,255,0.15)",
+                        borderRadius: "50%",
+                        border: "none",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <ChevronDown size={10} color="white" />
+                    </button>
+                  ) : (
+                    isMine && (
                       <StatusTicks
                         status={message.status}
                         compact
@@ -978,8 +996,8 @@ const MessageBubble = memo(function MessageBubble({
                           appearance?.theme?.accent || "var(--color-accent)"
                         }
                       />
-                    )}
-                  </div>
+                    )
+                  )}
                 </div>
               </div>
             )}
@@ -1198,22 +1216,17 @@ const MessageBubble = memo(function MessageBubble({
 
 
 function StatusTicks({ status, compact = false, seenColor = "#38bdf8" }) {
-  const clockClass = compact
-    ? "w-2.5 h-2.5"
-    : "w-3 h-3";
-  const tickClass = compact
-    ? "w-3 h-3"
-    : "w-3.5 h-3.5";
-  const seenClass = compact
-    ? "w-3 h-3 flex-shrink-0"
-    : "w-3.5 h-3.5 flex-shrink-0";
-  const tickStyle = { color: "color-mix(in srgb, var(--color-text) 70%, transparent)" };
-  if (status === "sending") return <Clock3 className={clockClass} style={tickStyle} />;
-  if (status === "sent") return <Check className={tickClass} style={tickStyle} />;
-  if (status === "delivered") return <CheckCheck className={tickClass} style={tickStyle} />;
-  return (
-    <CheckCheck className={seenClass} style={{ color: seenColor }} />
-  );
+  const clockClass = compact ? "w-2.5 h-2.5" : "w-3 h-3";
+  const tickClass = compact ? "w-3 h-3" : "w-3.5 h-3.5";
+  // Default greyish color for sent/delivered
+  const defaultTickStyle = { color: "rgba(255, 255, 255, 0.45)" };
+
+  if (status === "sending") return <Clock3 className={clockClass} style={defaultTickStyle} />;
+  if (status === "sent") return <Check className={tickClass} style={defaultTickStyle} />;
+  if (status === "delivered") return <CheckCheck className={tickClass} style={defaultTickStyle} />;
+  
+  // 'seen' status or default
+  return <CheckCheck className={tickClass} style={{ color: seenColor }} />;
 }
 
 function MenuItem({ icon: Icon, label, onClick, danger = false }) {
