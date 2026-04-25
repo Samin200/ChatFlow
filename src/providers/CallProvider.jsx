@@ -3,6 +3,8 @@ import { useAuth } from '../hooks/useAuth.jsx';
 import { useVoiceCall } from '../hooks/useVoiceCall';
 import IncomingCallModal from '../features/chat/IncomingCallModal';
 import ActiveVoiceCall from '../features/chat/ActiveVoiceCall';
+import OutgoingCallModal from '../features/chat/OutgoingCallModal';
+import GroupVoiceCall from '../features/chat/GroupVoiceCall';
 
 const CallContext = createContext(null);
 
@@ -23,6 +25,13 @@ export function CallProvider({ children }) {
       {children}
 
       {/* Only ONE global instance of call UI */}
+      {voiceCall.callState === 'calling' && voiceCall.activeCall && (
+        <OutgoingCallModal
+          contact={voiceCall.activeCall.contact}
+          onEnd={voiceCall.endCall}
+        />
+      )}
+
       {voiceCall.incomingCall && (
         <IncomingCallModal
           incoming={voiceCall.incomingCall}
@@ -32,12 +41,21 @@ export function CallProvider({ children }) {
       )}
 
       {voiceCall.activeCall && voiceCall.callState === 'connected' && (
-        <ActiveVoiceCall
-          token={voiceCall.activeCall.token}
-          serverUrl={voiceCall.activeCall.serverUrl}
-          contact={voiceCall.activeCall.contact}
-          onEnd={voiceCall.endCall}
-        />
+        voiceCall.activeCall.isGroup ? (
+          <GroupVoiceCall
+            token={voiceCall.activeCall.token}
+            serverUrl={voiceCall.activeCall.serverUrl}
+            chatName={voiceCall.activeCall.contact?.displayName || 'Group Call'}
+            onEnd={voiceCall.endCall}
+          />
+        ) : (
+          <ActiveVoiceCall
+            token={voiceCall.activeCall.token}
+            serverUrl={voiceCall.activeCall.serverUrl}
+            contact={voiceCall.activeCall.contact}
+            onEnd={voiceCall.endCall}
+          />
+        )
       )}
     </CallContext.Provider>
   );
