@@ -25,9 +25,7 @@ export function connectSocket(token) {
     // Explicitly authenticate to join user room
     const user = JSON.parse(localStorage.getItem('nChatFlow_user') || '{}');
     const userId = user.id;
-    console.log("[DEBUG-SOCKET] Auth check: userId =", userId);
     if (userId) {
-      console.log("[DEBUG-SOCKET] Emitting 'authenticate' for", userId);
       socket.emit('authenticate', userId);
     }
 
@@ -36,6 +34,15 @@ export function connectSocket(token) {
       socket.off(event); // Avoid duplicates
       callbacks.forEach((cb) => socket.on(event, cb));
     });
+  });
+
+  socket.io.on("reconnect", () => {
+    console.log("[Socket] Reconnected, re-authenticating...");
+    const user = JSON.parse(localStorage.getItem('nChatFlow_user') || '{}');
+    const userId = user.id;
+    if (userId) {
+      socket.emit('authenticate', userId);
+    }
   });
 
   return socket;

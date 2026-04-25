@@ -274,17 +274,12 @@ export function useChat(currentUser, chatIdFromRoute) {
         throttledRefreshContacts();
       }),
       subscribeSocketEvent("message:status", (payload) => {
-        console.log("[DEBUG-STATUS] RECEIVED message:status payload:", payload);
         const { messageId, status, chatId } = payload?.data || {};
         const metaChatId = payload?.meta?.chatId;
         const activeId = activeContactIdRef.current;
         
         const targetChatId = chatId || metaChatId;
-        console.log("[DEBUG-STATUS] Processing for chatId:", targetChatId, "current activeId:", activeId);
-        if (targetChatId && String(targetChatId) !== String(activeId)) {
-          console.log("[DEBUG-STATUS] Ignoring update (not active chat)");
-          return;
-        }
+        if (targetChatId && String(targetChatId) !== String(activeId)) return;
 
         setMessages((prev) => {
           if (messageId) {
