@@ -156,7 +156,10 @@ export default function ChatPage() {
         onToggleChatSide={handleToggleChatSide}
         onToggleStarMessage={handleToggleStar}
         onInitiateCall={(targetId, isVideo) => {
-          if (activeContact) voiceCall.startCall(activeContact, activeContactId);
+          if (activeContact) {
+             const targetContact = { ...activeContact, id: targetId };
+             voiceCall.startCall(targetContact, activeContactId);
+          }
         }}
         onInviteFriends={handleInviteFriends}
         onInviteByLink={handleInviteByLink}
