@@ -2,7 +2,7 @@ import { getInitials, getAvatarColor, formatLastSeen } from "../../utils/helpers
 import {
   ArrowLeft, Phone, Video, UserPlus, Info, Image, Search, Bell, BellOff, Clock,
   Palette, LayoutTemplate, Trash2, LogOut, Pin, Paperclip, Shield, ShieldOff, Download,
-  CornerUpLeft, Star, Forward, Pencil, Copy
+  CornerUpLeft, Star, Forward, Pencil, Copy, Lock
 } from "lucide-react";
 import ChatMenu from "./ChatMenu.jsx";
 import ChatFlowIcon from "../../components/ChatFlowIcon.jsx";
@@ -185,8 +185,9 @@ export default function ChatHeader({
         </div>
 
         <div className="min-w-0">
-          <h2 className="font-semibold text-[1.1rem] md:text-sm leading-tight truncate" style={{ color: textColor }}>
+          <h2 className="font-semibold text-[1.1rem] md:text-sm leading-tight truncate flex items-center gap-1.5" style={{ color: textColor }}>
             {contact.displayName}
+            <Lock className="w-3 h-3 opacity-30 shrink-0" />
           </h2>
           <p className="text-[0.7rem] md:text-xs leading-tight mt-0.5">
             {isTyping ? (

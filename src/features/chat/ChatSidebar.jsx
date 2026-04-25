@@ -550,7 +550,7 @@ function Section({
   onToggleArchive,
   icon,
 }) {
-  if (!contacts.length) return null;
+  if (!contacts?.length) return null;
   return (
     <div className="mb-3">
       <div

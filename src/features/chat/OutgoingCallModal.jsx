@@ -2,13 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { PhoneOff, Mic, MicOff, Volume2, User, Lock } from 'lucide-react';
 
-export default function OutgoingCallModal({ contact, onEnd }) {
+export default function OutgoingCallModal({ contact, isVideo, onEnd }) {
   const [duration, setDuration] = useState(0);
 
   useEffect(() => {
+    console.log('[OutgoingCall] Rendering for:', contact?.displayName);
     const timer = setInterval(() => setDuration(d => d + 1), 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [contact]);
 
   const formatTime = (sec) => {
     const m = Math.floor(sec / 60);
@@ -25,7 +26,7 @@ export default function OutgoingCallModal({ contact, onEnd }) {
     >
       {/* Top Info */}
       <div className="px-6 pt-10 text-center z-10 shrink-0">
-        <p className="text-xs uppercase tracking-[0.28em] text-white/60 font-medium">ChatFlow voice</p>
+        <p className="text-xs uppercase tracking-[0.28em] text-white/60 font-medium">ChatFlow {isVideo ? 'video' : 'voice'}</p>
         <p className="mt-3 text-3xl font-semibold tracking-[-0.03em] drop-shadow-md">{contact?.displayName || 'Unknown'}</p>
         <p className="mt-2 text-xs text-white/60 font-medium flex items-center justify-center gap-1">
           <Lock size={12} className="opacity-70" /> calling...
@@ -34,11 +35,11 @@ export default function OutgoingCallModal({ contact, onEnd }) {
 
       {/* Center Avatar & Ping */}
       <div className="relative flex-1 flex flex-col items-center justify-center z-10 py-4 min-h-[200px]">
-        <div className="relative grid h-48 w-48 place-items-center">
-          <span className="absolute h-48 w-48 animate-ping rounded-full bg-white/10 duration-1000" />
-          <span className="absolute h-36 w-36 animate-pulse rounded-full bg-white/15 duration-700" />
+        <div className="relative grid h-40 w-40 md:h-48 md:w-48 place-items-center">
+          <span className="absolute h-full w-full animate-ping rounded-full bg-white/10 duration-1000" />
+          <span className="absolute h-3/4 w-3/4 animate-pulse rounded-full bg-white/15 duration-700" />
           
-          <div className="relative h-36 w-36 overflow-hidden rounded-full shadow-2xl ring-4 ring-black/10" style={{ backgroundColor: 'var(--color-surface)' }}>
+          <div className="relative h-3/4 w-3/4 overflow-hidden rounded-full shadow-2xl ring-4 ring-black/10" style={{ backgroundColor: 'var(--color-surface)' }}>
             {contact?.avatar ? (
               <img src={contact.avatar} className="w-full h-full object-cover" alt="" />
             ) : (

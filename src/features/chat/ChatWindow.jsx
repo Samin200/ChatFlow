@@ -191,7 +191,12 @@ export default function ChatWindow({
       : (activeChatAppearance?.theirBubble || resolvedTheme.theirBubble),
     backgroundStyle: useAppThemeForBackground
       ? { backgroundColor: "var(--color-background)", backgroundImage: "none" }
-      : activeChatAppearance?.backgroundStyle,
+      : { 
+          ...activeChatAppearance?.backgroundStyle,
+          backgroundAttachment: "scroll", // Better for mobile performance/behavior
+          backgroundSize: "cover",
+          backgroundPosition: "center"
+        },
   };
 
   return (

@@ -73,7 +73,8 @@ export default function MessageList({
         }
 
         const isMine = message.senderId === currentUser?.id;
-        const sender = isMine ? currentUser : activeContact;
+        // In group chats, use message.sender for incoming messages to get individual names/avatars.
+        const sender = isMine ? currentUser : (message.sender || activeContact);
 
         return (
           <MessageRow

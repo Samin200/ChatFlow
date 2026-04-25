@@ -1,10 +1,10 @@
 import React, { createContext, useContext } from 'react';
 import { useAuth } from '../hooks/useAuth.jsx';
-import { useVoiceCall } from '../hooks/useVoiceCall';
+import { useCall } from '../hooks/useCall';
 import IncomingCallModal from '../features/chat/IncomingCallModal';
-import ActiveVoiceCall from '../features/chat/ActiveVoiceCall';
+import ActiveCallUI from '../features/chat/ActiveCallUI';
 import OutgoingCallModal from '../features/chat/OutgoingCallModal';
-import GroupVoiceCall from '../features/chat/GroupVoiceCall';
+import GroupCallUI from '../features/chat/GroupCallUI';
 
 const CallContext = createContext(null);
 
@@ -18,42 +18,44 @@ export function useCallContext() {
 
 export function CallProvider({ children }) {
   const { user: currentUser } = useAuth();
-  const voiceCall = useVoiceCall(currentUser);
+  const call = useCall(currentUser);
 
   return (
-    <CallContext.Provider value={voiceCall}>
+    <CallContext.Provider value={call}>
       {children}
 
       {/* Only ONE global instance of call UI */}
-      {voiceCall.callState === 'calling' && voiceCall.activeCall && (
+      {call.callState === 'calling' && call.activeCall && (
         <OutgoingCallModal
-          contact={voiceCall.activeCall.contact}
-          onEnd={voiceCall.endCall}
+          contact={call.activeCall.contact}
+          isVideo={call.activeCall.isVideo}
+          onEnd={call.endCall}
         />
       )}
 
-      {voiceCall.incomingCall && (
+      {call.incomingCall && (
         <IncomingCallModal
-          incoming={voiceCall.incomingCall}
-          onAccept={voiceCall.acceptCall}
-          onReject={voiceCall.rejectCall}
+          incoming={call.incomingCall}
+          onAccept={call.acceptCall}
+          onReject={call.rejectCall}
         />
       )}
 
-      {voiceCall.activeCall && voiceCall.callState === 'connected' && (
-        voiceCall.activeCall.isGroup ? (
-          <GroupVoiceCall
-            token={voiceCall.activeCall.token}
-            serverUrl={voiceCall.activeCall.serverUrl}
-            chatName={voiceCall.activeCall.contact?.displayName || 'Group Call'}
-            onEnd={voiceCall.endCall}
+      {call.activeCall && call.callState === 'connected' && (
+        call.activeCall.isGroup ? (
+          <GroupCallUI
+            token={call.activeCall.token}
+            serverUrl={call.activeCall.serverUrl}
+            chatName={call.activeCall.contact?.displayName || 'Group Call'}
+            onEnd={call.endCall}
           />
         ) : (
-          <ActiveVoiceCall
-            token={voiceCall.activeCall.token}
-            serverUrl={voiceCall.activeCall.serverUrl}
-            contact={voiceCall.activeCall.contact}
-            onEnd={voiceCall.endCall}
+          <ActiveCallUI
+            token={call.activeCall.token}
+            serverUrl={call.activeCall.serverUrl}
+            contact={call.activeCall.contact}
+            isVideo={call.activeCall.isVideo}
+            onEnd={call.endCall}
           />
         )
       )}

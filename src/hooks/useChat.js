@@ -51,6 +51,7 @@ import {
   subscribeSocketEvent,
   emitSocketEvent,
 } from "../services/socketService.js";
+import { encryptMessage, decryptMessage } from "../utils/cryptoHelper.js";
 import {
   getAuthToken,
   getActiveChatId,
@@ -195,6 +196,12 @@ export function useChat(currentUser, chatIdFromRoute) {
 
         const activeId = activeContactIdRef.current;
         const incomingChatId = incoming?.chatId || incoming?.receiverId || incoming?.chat?.id;
+        
+        // Decrypt message content if needed
+        if (incoming.text) {
+          incoming.text = await decryptMessage(incoming.text, incomingChatId);
+        }
+
         const isForActive = activeId && String(incomingChatId) === String(activeId);
 
         if (isForActive) {
@@ -236,9 +243,14 @@ export function useChat(currentUser, chatIdFromRoute) {
 
         throttledRefreshContacts();
       }),
-      subscribeSocketEvent("message:update", (rawUpdatedMessage) => {
+      subscribeSocketEvent("message:update", async (rawUpdatedMessage) => {
         const updatedMessage = normalizeMessagePayload(rawUpdatedMessage);
         if (!updatedMessage?.id) return;
+        
+        if (updatedMessage.text) {
+          updatedMessage.text = await decryptMessage(updatedMessage.text, updatedMessage.chatId || activeContactIdRef.current);
+        }
+
         setMessages((prev) =>
           prev.map((msg) => (msg.id === updatedMessage.id ? { ...msg, ...updatedMessage } : msg))
         );
@@ -335,7 +347,16 @@ export function useChat(currentUser, chatIdFromRoute) {
       ]);
 
       if (cancelled) return;
-      setMessages(msgs);
+
+      // Decrypt all messages
+      const decryptedMsgs = await Promise.all(
+        msgs.map(async (m) => ({
+          ...m,
+          text: m.text ? await decryptMessage(m.text, activeContactId) : m.text
+        }))
+      );
+
+      setMessages(decryptedMsgs);
       setInputFocusToken((v) => v + 1);
       
       // Keep skeleton visible for at least a brief moment to prevent flashing
@@ -415,13 +436,16 @@ export function useChat(currentUser, chatIdFromRoute) {
       // Add temp message to UI immediately (shows clock icon)
       setMessages((prev) => [...prev, tempMessage]);
 
+      // Encrypt for transmission
+      const encryptedText = type === "text" ? await encryptMessage(text, activeContactId) : text;
+
       const sender =
         type === "voice"
           ? await sendVoiceMessage({ senderId: currentUser.id, receiverId: activeContactId, duration: duration ?? 0, voiceBlob, replyToMessageId })
           : await sendMessage({
               senderId: currentUser.id,
               receiverId: activeContactId,
-              text,
+              text: encryptedText,
               type,
               imageData,
               imageFile,
@@ -438,8 +462,10 @@ export function useChat(currentUser, chatIdFromRoute) {
       }
 
       // Replace temp message with actual message from server
-      // (or remove temp if socket already added the real message)
       if (sender.message) {
+        if (sender.message.text) {
+          sender.message.text = await decryptMessage(sender.message.text, activeContactId);
+        }
         setMessages((prev) => {
           // Check if real message already exists (from socket)
           if (prev.some((m) => m.id === sender.message.id)) {

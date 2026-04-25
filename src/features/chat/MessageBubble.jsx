@@ -21,6 +21,8 @@ import {
   CornerUpLeft,
   Flag,
   ChevronRight,
+  Lock,
+  Phone,
 } from "lucide-react";
 import {
   formatMessageTime,
@@ -189,7 +191,7 @@ const MessageBubble = memo(function MessageBubble({
   };
 
   const totalReactions = Object.entries(message.reactions ?? {}).filter(
-    ([, users]) => users.length > 0
+    ([, users]) => Array.isArray(users) && users.length > 0
   );
   const activeReactionUsers = message.reactions?.[activeReactionEmoji] ?? [];
 
@@ -840,7 +842,7 @@ const MessageBubble = memo(function MessageBubble({
                   <img
                     src={message.imageData}
                     alt="Shared image"
-                    className={`max-w-full rounded-xl object-contain max-h-72 transition-all duration-500 hover:scale-[1.03] ${
+                    className={`max-w-full rounded-xl object-contain max-h-[min(380px,65vh)] transition-all duration-500 hover:scale-[1.03] ${
                       isImageLoaded
                         ? "opacity-100 scale-100"
                         : "opacity-0 scale-95"
@@ -890,6 +892,25 @@ const MessageBubble = memo(function MessageBubble({
                   {message.duration ?? 0}s
                 </span>
               </button>
+            ) : message.type === "call_log" ? (
+              <div className="flex items-center gap-3 py-1">
+                <div 
+                  className="flex items-center justify-center h-8 w-8 rounded-full"
+                  style={{ backgroundColor: isMine ? "rgba(255,255,255,0.15)" : "var(--color-accent-transparent)" }}
+                >
+                  {message.metadata?.isVideo ? (
+                    <Video className="w-4 h-4" />
+                  ) : (
+                    <Phone className="w-4 h-4" />
+                  )}
+                </div>
+                <div>
+                  <p className="text-[14px] font-medium leading-tight">{message.text}</p>
+                  <p className="text-[10px] opacity-60 uppercase tracking-wider mt-0.5">
+                    {message.metadata?.status || 'Call'}
+                  </p>
+                </div>
+              </div>
             ) : canInlineMeta ? (
               <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
                 <div className="flex-1 min-w-0">
@@ -916,6 +937,7 @@ const MessageBubble = memo(function MessageBubble({
                     {message.starredBy?.length > 0 && (
                       <Pin className="w-2.5 h-2.5 mr-1" style={{ transform: "rotate(30deg)" }} />
                     )}
+                    <Lock className="w-2.5 h-2.5 mr-1 opacity-40 shrink-0" />
                     {formatMessageTime(message.createdAt)}
                   </span>
                   <div className="flex items-center justify-center shrink-0 ml-1 w-4 h-4 relative">
@@ -969,6 +991,7 @@ const MessageBubble = memo(function MessageBubble({
                   {message.starredBy?.length > 0 && (
                     <Pin className="w-2.5 h-2.5 mr-1" style={{ transform: "rotate(30deg)" }} />
                   )}
+                  <Lock className="w-2.5 h-2.5 mr-1 opacity-40 shrink-0" />
                   {formatMessageTime(message.createdAt)}
                 </span>
                 <div className="flex items-center justify-center shrink-0 ml-1 w-4 h-4 relative">

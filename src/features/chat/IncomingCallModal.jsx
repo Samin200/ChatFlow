@@ -24,7 +24,7 @@ export default function IncomingCallModal({ incoming, onAccept, onReject }) {
         </div>
 
         <h2 className="text-3xl font-semibold text-white">{incoming.callerName || 'Unknown'}</h2>
-        <p className="text-emerald-400 mt-2 text-lg">Incoming voice call</p>
+        <p className="text-emerald-400 mt-2 text-lg">Incoming {incoming.isVideo ? 'video' : 'voice'} call</p>
       </div>
 
       {/* Bottom Controls */}
