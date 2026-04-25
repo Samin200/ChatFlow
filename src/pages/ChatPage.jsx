@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import ChatLayout from "../features/chat/ChatLayout.jsx";
 import { useChat } from "../hooks/useChat.js";
 import AdminPage from "./AdminPage.jsx";
-import { useAuth } from "../hooks/useAuth.js";
+import { useAuth } from "../hooks/useAuth.jsx";
 import { useCallContext } from "../providers/CallProvider.jsx";
 
 export default function ChatPage() {
@@ -154,7 +154,6 @@ export default function ChatPage() {
         onChangeTheme={handleChangeTheme}
         onUpdateChatSides={handleUpdateChatSides}
         onToggleChatSide={handleToggleChatSide}
-        onToggleStarMessage={handleToggleStar}
         onInitiateCall={(targetId, isVideo) => {
           if (activeContact) {
              const targetContact = { ...activeContact, id: targetId };
