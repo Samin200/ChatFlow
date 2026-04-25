@@ -790,6 +790,16 @@ const MessageBubble = memo(function MessageBubble({
               style={tailStyle}
             />
 
+            {/* Absolute Chevron - doesn't affect bubble width */}
+            {(isHovered || showHoverMenu) && !message.deleted && (
+              <button
+                onClick={handleChevronClick}
+                className="absolute top-2 right-2 z-[10] flex items-center justify-center transition-all bg-black/20 hover:bg-black/40 rounded-full w-4 h-4"
+              >
+                <ChevronDown size={10} color="white" />
+              </button>
+            )}
+
             {/* Reply preview */}
             {replyTarget && !message.deleted && (
               <div
@@ -919,7 +929,7 @@ const MessageBubble = memo(function MessageBubble({
                     {formatMessageTime(message.createdAt)}
                   </span>
                   <div className="flex items-center justify-center shrink-0 ml-0.5 min-w-[14px]">
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center justify-center shrink-0 ml-0.5 min-w-[14px]">
                       {isMine && (
                         <StatusTicks
                           status={message.status}
@@ -928,22 +938,6 @@ const MessageBubble = memo(function MessageBubble({
                             appearance?.theme?.accent || "var(--color-accent)"
                           }
                         />
-                      )}
-                      {(isHovered || showHoverMenu) && !message.deleted && (
-                        <button
-                          onClick={handleChevronClick}
-                          className="flex items-center justify-center transition-all shrink-0"
-                          style={{
-                            width: 14,
-                            height: 14,
-                            background: "rgba(255,255,255,0.15)",
-                            borderRadius: "50%",
-                            border: "none",
-                            cursor: "pointer",
-                          }}
-                        >
-                          <ChevronDown size={10} color="white" />
-                        </button>
                       )}
                     </div>
                   </div>
@@ -975,7 +969,7 @@ const MessageBubble = memo(function MessageBubble({
                   {formatMessageTime(message.createdAt)}
                 </span>
                 <div className="flex items-center justify-center shrink-0 ml-0.5 min-w-[14px]">
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center justify-center shrink-0 ml-0.5 min-w-[14px]">
                     {isMine && (
                       <StatusTicks
                         status={message.status}
@@ -984,22 +978,6 @@ const MessageBubble = memo(function MessageBubble({
                           appearance?.theme?.accent || "var(--color-accent)"
                         }
                       />
-                    )}
-                    {(isHovered || showHoverMenu) && !message.deleted && (
-                      <button
-                        onClick={handleChevronClick}
-                        className="flex items-center justify-center transition-all shrink-0"
-                        style={{
-                          width: 14,
-                          height: 14,
-                          background: "rgba(255,255,255,0.15)",
-                          borderRadius: "50%",
-                          border: "none",
-                          cursor: "pointer",
-                        }}
-                      >
-                        <ChevronDown size={10} color="white" />
-                      </button>
                     )}
                   </div>
                 </div>
