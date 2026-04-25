@@ -1215,18 +1215,18 @@ const MessageBubble = memo(function MessageBubble({
 
 
 
-function StatusTicks({ status, compact = false, seenColor = "#38bdf8" }) {
+function StatusTicks({ status, compact = false }) {
   const clockClass = compact ? "w-2.5 h-2.5" : "w-3 h-3";
   const tickClass = compact ? "w-3 h-3" : "w-3.5 h-3.5";
-  // Default greyish color for sent/delivered
-  const defaultTickStyle = { color: "rgba(255, 255, 255, 0.45)" };
+  const greyStyle = { color: "rgba(255, 255, 255, 0.45)" };
 
-  if (status === "sending") return <Clock3 className={clockClass} style={defaultTickStyle} />;
-  if (status === "sent") return <Check className={tickClass} style={defaultTickStyle} />;
-  if (status === "delivered") return <CheckCheck className={tickClass} style={defaultTickStyle} />;
+  if (status === "sending") return <Clock3 className={clockClass} style={greyStyle} />;
   
-  // 'seen' status or default
-  return <CheckCheck className={tickClass} style={{ color: seenColor }} />;
+  // 'seen' status -> 2 grey ticks
+  if (status === "seen") return <CheckCheck className={tickClass} style={greyStyle} />;
+
+  // Default (sent, delivered) -> 1 grey tick
+  return <Check className={tickClass} style={greyStyle} />;
 }
 
 function MenuItem({ icon: Icon, label, onClick, danger = false }) {
