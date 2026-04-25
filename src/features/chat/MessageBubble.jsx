@@ -919,23 +919,8 @@ const MessageBubble = memo(function MessageBubble({
                     {formatMessageTime(message.createdAt)}
                   </span>
                   <div className="flex items-center justify-center shrink-0 ml-0.5 min-w-[14px]">
-                    {(isHovered || showHoverMenu) && !message.deleted ? (
-                      <button
-                        onClick={handleChevronClick}
-                        className="flex items-center justify-center transition-all"
-                        style={{
-                          width: 14,
-                          height: 14,
-                          background: "rgba(255,255,255,0.15)",
-                          borderRadius: "50%",
-                          border: "none",
-                          cursor: "pointer",
-                        }}
-                      >
-                        <ChevronDown size={10} color="white" />
-                      </button>
-                    ) : (
-                      isMine && (
+                    <div className="flex items-center gap-1">
+                      {isMine && (
                         <StatusTicks
                           status={message.status}
                           compact
@@ -943,8 +928,24 @@ const MessageBubble = memo(function MessageBubble({
                             appearance?.theme?.accent || "var(--color-accent)"
                           }
                         />
-                      )
-                    )}
+                      )}
+                      {(isHovered || showHoverMenu) && !message.deleted && (
+                        <button
+                          onClick={handleChevronClick}
+                          className="flex items-center justify-center transition-all"
+                          style={{
+                            width: 14,
+                            height: 14,
+                            background: "rgba(255,255,255,0.15)",
+                            borderRadius: "50%",
+                            border: "none",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <ChevronDown size={10} color="white" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -974,23 +975,8 @@ const MessageBubble = memo(function MessageBubble({
                   {formatMessageTime(message.createdAt)}
                 </span>
                 <div className="flex items-center justify-center shrink-0 ml-0.5 min-w-[14px]">
-                  {(isHovered || showHoverMenu) && !message.deleted ? (
-                    <button
-                      onClick={handleChevronClick}
-                      className="flex items-center justify-center transition-all"
-                      style={{
-                        width: 14,
-                        height: 14,
-                        background: "rgba(255,255,255,0.15)",
-                        borderRadius: "50%",
-                        border: "none",
-                        cursor: "pointer",
-                      }}
-                    >
-                      <ChevronDown size={10} color="white" />
-                    </button>
-                  ) : (
-                    isMine && (
+                  <div className="flex items-center gap-1">
+                    {isMine && (
                       <StatusTicks
                         status={message.status}
                         compact
@@ -998,8 +984,24 @@ const MessageBubble = memo(function MessageBubble({
                           appearance?.theme?.accent || "var(--color-accent)"
                         }
                       />
-                    )
-                  )}
+                    )}
+                    {(isHovered || showHoverMenu) && !message.deleted && (
+                      <button
+                        onClick={handleChevronClick}
+                        className="flex items-center justify-center transition-all"
+                        style={{
+                          width: 14,
+                          height: 14,
+                          background: "rgba(255,255,255,0.15)",
+                          borderRadius: "50%",
+                          border: "none",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <ChevronDown size={10} color="white" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
