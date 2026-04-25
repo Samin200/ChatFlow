@@ -77,6 +77,14 @@ export default function ChatPage() {
     });
   }, [handleSendMessage]);
 
+  const onCreateGroup = useCallback(async (name, memberIds) => {
+    const result = await handleCreateGroup(name, memberIds);
+    if (result?.success && result.group?.id) {
+      onSelectContact(result.group.id);
+    }
+    return result;
+  }, [handleCreateGroup, onSelectContact]);
+
   const voiceCall = useCallContext();
 
   // When a contact is selected, navigate to the URL
@@ -144,7 +152,7 @@ export default function ChatPage() {
         saveScrollPosition={saveScrollPosition}
         getSavedScrollPosition={getSavedScrollPosition}
         onClearContact={() => navigate("/")}
-        onCreateGroup={handleCreateGroup}
+        onCreateGroup={onCreateGroup}
         onOpenStarred={handleOpenStarred}
         onReadAll={handleReadAll}
         onOpenSettings={handleOpenSettings}

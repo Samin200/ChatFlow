@@ -16,7 +16,7 @@ export default function ActiveVoiceCall({ token, serverUrl, contact, onEnd }) {
       onDisconnected={onEnd}
       className="fixed inset-0 z-[99999] h-[100dvh] w-[100dvw] overflow-hidden"
       style={{
-        background: "radial-gradient(120% 60% at 50% 0%, color-mix(in srgb, var(--color-accent) 40%, var(--color-surface)) 0%, var(--color-surface) 50%, var(--color-background) 100%)"
+        background: "radial-gradient(120% 60% at 50% 0%, var(--color-accent) 0%, color-mix(in srgb, var(--color-accent) 70%, black) 55%, var(--color-surface) 100%)"
       }}
     >
       <CallUI contact={contact} onEnd={onEnd} />
@@ -31,6 +31,7 @@ function CallUI({ contact, onEnd }) {
   const { localParticipant, isMicrophoneEnabled } = useLocalParticipant();
   const [isSpeaker, setIsSpeaker] = useState(true);
   const [duration, setDuration] = useState(0);
+  const [optimisticMute, setOptimisticMute] = useState(null);
 
   useEffect(() => {
     const timer = setInterval(() => setDuration(d => d + 1), 1000);
@@ -43,10 +44,17 @@ function CallUI({ contact, onEnd }) {
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
-  const toggleMute = () => {
+  const toggleMute = async () => {
     if (localParticipant) {
-      // Toggle based on actual current state
-      localParticipant.setMicrophoneEnabled(!isMicrophoneEnabled);
+      const nextState = !(optimisticMute ?? !isMicrophoneEnabled);
+      setOptimisticMute(nextState);
+      try {
+        await localParticipant.setMicrophoneEnabled(!nextState);
+      } catch (err) {
+        console.error("Failed to toggle mute:", err);
+      } finally {
+        setTimeout(() => setOptimisticMute(null), 500);
+      }
     }
   };
 
@@ -56,10 +64,10 @@ function CallUI({ contact, onEnd }) {
     // without advanced device management. We toggle the UI state for now.
   };
 
-  const isMuted = !isMicrophoneEnabled;
+  const isMuted = optimisticMute ?? !isMicrophoneEnabled;
 
   return (
-    <div className="relative flex h-full w-full flex-col text-[var(--color-text)] pt-safe pb-safe justify-between">
+    <div className="relative flex h-full w-full flex-col text-white pt-safe pb-safe justify-between">
       
       {/* Top Info */}
       <div className="px-6 pt-8 md:pt-12 text-center z-10 shrink-0">
@@ -71,8 +79,8 @@ function CallUI({ contact, onEnd }) {
       {/* Center Avatar & Ping */}
       <div className="relative flex-1 flex flex-col items-center justify-center z-10 py-4 min-h-[200px]">
         <div className="relative grid h-32 w-32 sm:h-48 sm:w-48 place-items-center">
-          <span className="absolute h-40 w-40 sm:h-56 sm:w-56 animate-ping rounded-full bg-[var(--color-text)]/5 duration-1000" />
-          <span className="absolute h-32 w-32 sm:h-44 sm:w-44 animate-pulse rounded-full bg-[var(--color-text)]/10 duration-700" />
+          <span className="absolute h-40 w-40 sm:h-56 sm:w-56 animate-ping rounded-full bg-white/5 duration-1000" />
+          <span className="absolute h-32 w-32 sm:h-44 sm:w-44 animate-pulse rounded-full bg-white/10 duration-700" />
           
           <div className="relative h-28 w-28 sm:h-40 sm:w-40 overflow-hidden rounded-full shadow-2xl ring-4 ring-black/10" style={{ backgroundColor: 'var(--color-surface)' }}>
             {contact?.avatar ? (
@@ -109,27 +117,36 @@ function CallUI({ contact, onEnd }) {
       </div>
 
       {/* Bottom Controls */}
-      <div className="mt-6 mb-4 sm:mb-8 grid grid-cols-3 gap-4 sm:gap-6 px-6 sm:px-10 place-items-center w-full max-w-md mx-auto z-10 shrink-0">
-        <button 
-          onClick={toggleMute} 
-          className={`grid h-14 w-14 sm:h-16 sm:w-16 place-items-center rounded-full transition-all active:scale-90 shadow-lg ${isMuted ? 'bg-[var(--color-text)] text-[var(--color-background)]' : 'bg-[var(--color-text)]/10 text-[var(--color-text)] hover:bg-[var(--color-text)]/20'}`}
-        >
-          {isMuted ? <MicOff className="h-6 w-6 sm:h-7 sm:w-7" /> : <Mic className="h-6 w-6 sm:h-7 sm:w-7" />}
-        </button>
+      <div className="mt-6 mb-4 sm:mb-10 flex items-center justify-center gap-6 sm:gap-10 w-full max-w-md mx-auto z-10 shrink-0">
+        <div className="flex flex-col items-center gap-2">
+          <button 
+            onClick={toggleMute} 
+            className={`grid h-14 w-14 sm:h-16 sm:w-16 place-items-center rounded-full transition-all active:scale-95 shadow-xl ${isMuted ? 'bg-white text-[#0B141A]' : 'bg-white/10 text-white hover:bg-white/20'}`}
+          >
+            {isMuted ? <MicOff className="h-6 w-6 sm:h-7 sm:w-7" /> : <Mic className="h-6 w-6 sm:h-7 sm:w-7" />}
+          </button>
+          <span className="text-[10px] uppercase tracking-widest font-bold opacity-60">Mute</span>
+        </div>
         
-        <button 
-          onClick={toggleSpeaker}
-          className={`grid h-14 w-14 sm:h-16 sm:w-16 place-items-center rounded-full transition-all active:scale-90 shadow-lg ${!isSpeaker ? 'bg-[var(--color-text)] text-[var(--color-background)]' : 'bg-[var(--color-text)]/10 text-[var(--color-text)] hover:bg-[var(--color-text)]/20'}`}
-        >
-          <Volume2 className="h-6 w-6 sm:h-7 sm:w-7" />
-        </button>
-        
-        <button 
-          onClick={onEnd} 
-          className="grid h-14 w-14 sm:h-16 sm:w-16 place-items-center rounded-full bg-[#FF4B4B] text-white transition-all hover:bg-red-400 active:scale-90 shadow-[0_0_20px_rgba(255,75,75,0.4)]"
-        >
-          <PhoneOff className="h-7 w-7 sm:h-8 sm:w-8" />
-        </button>
+        <div className="flex flex-col items-center gap-2">
+          <button 
+            onClick={onEnd} 
+            className="grid h-16 w-16 sm:h-20 sm:w-20 place-items-center rounded-full bg-[#FF4B4B] text-white transition-all hover:bg-rose-600 active:scale-95 shadow-[0_0_30px_rgba(255,75,75,0.4)]"
+          >
+            <PhoneOff className="h-8 w-8 sm:h-10 sm:w-10" />
+          </button>
+          <span className="text-[10px] uppercase tracking-widest font-bold opacity-60">End</span>
+        </div>
+
+        <div className="flex flex-col items-center gap-2">
+          <button 
+            onClick={toggleSpeaker}
+            className={`grid h-14 w-14 sm:h-16 sm:w-16 place-items-center rounded-full transition-all active:scale-95 shadow-xl ${!isSpeaker ? 'bg-white text-[#0B141A]' : 'bg-white/10 text-white hover:bg-white/20'}`}
+          >
+            <Volume2 className="h-6 w-6 sm:h-7 sm:w-7" />
+          </button>
+          <span className="text-[10px] uppercase tracking-widest font-bold opacity-60">Speaker</span>
+        </div>
       </div>
 
     </div>

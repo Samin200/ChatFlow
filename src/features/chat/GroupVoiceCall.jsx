@@ -15,7 +15,9 @@ export default function GroupVoiceCall({ token, serverUrl, chatName, onEnd }) {
       video={true}
       onDisconnected={onEnd}
       className="fixed inset-0 z-[99999] h-[100dvh] w-[100dvw] overflow-hidden"
-      style={{ background: '#0B141A' }}
+      style={{
+        background: "radial-gradient(120% 60% at 50% 0%, var(--color-accent) 0%, color-mix(in srgb, var(--color-accent) 70%, black) 55%, var(--color-surface) 100%)"
+      }}
     >
       <GroupCallUI chatName={chatName} onEnd={onEnd} />
       <RoomAudioRenderer />
@@ -29,6 +31,8 @@ function GroupCallUI({ chatName, onEnd }) {
   const participants = useParticipants();
   const { localParticipant, isMicrophoneEnabled, isCameraEnabled } = useLocalParticipant();
   const [duration, setDuration] = useState(0);
+  const [optimisticMute, setOptimisticMute] = useState(null);
+  const [optimisticVideo, setOptimisticVideo] = useState(null);
 
   useEffect(() => {
     const timer = setInterval(() => setDuration(d => d + 1), 1000);
@@ -42,13 +46,36 @@ function GroupCallUI({ chatName, onEnd }) {
     return `${h > 0 ? h + ':' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  const toggleMute = () => {
-    localParticipant?.setMicrophoneEnabled(!isMicrophoneEnabled);
+  const toggleMute = async () => {
+    if (localParticipant) {
+      const nextState = !(optimisticMute ?? !isMicrophoneEnabled);
+      setOptimisticMute(nextState);
+      try {
+        await localParticipant.setMicrophoneEnabled(!nextState);
+      } catch (err) {
+        console.error("Failed to toggle mute:", err);
+      } finally {
+        setTimeout(() => setOptimisticMute(null), 500);
+      }
+    }
   };
 
-  const toggleVideo = () => {
-    localParticipant?.setCameraEnabled(!isCameraEnabled);
+  const toggleVideo = async () => {
+    if (localParticipant) {
+      const nextState = !(optimisticVideo ?? !isCameraEnabled);
+      setOptimisticVideo(nextState);
+      try {
+        await localParticipant.setCameraEnabled(!nextState);
+      } catch (err) {
+        console.error("Failed to toggle video:", err);
+      } finally {
+        setTimeout(() => setOptimisticVideo(null), 500);
+      }
+    }
   };
+
+  const isMuted = optimisticMute ?? !isMicrophoneEnabled;
+  const isVideoOff = optimisticVideo ?? !isCameraEnabled;
 
   // Mock participants to match the user's screenshot if actual participants are few
   const displayParticipants = participants.length > 1 ? participants : [
@@ -111,16 +138,16 @@ function GroupCallUI({ chatName, onEnd }) {
       <div className="mb-6 sm:mb-10 flex justify-center gap-4 sm:gap-6 items-center z-10 shrink-0">
         <button 
           onClick={toggleMute}
-          className={`grid h-14 w-14 sm:h-16 sm:w-16 place-items-center rounded-full transition-all active:scale-90 shadow-xl ${!isMicrophoneEnabled ? 'bg-white text-[#0B141A]' : 'bg-[#1E2A32] text-white hover:bg-[#2A3942]'}`}
+          className={`grid h-14 w-14 sm:h-16 sm:w-16 place-items-center rounded-full transition-all active:scale-90 shadow-xl ${isMuted ? 'bg-white text-[#0B141A]' : 'bg-[#1E2A32] text-white hover:bg-[#2A3942]'}`}
         >
-          {isMicrophoneEnabled ? <Mic className="h-6 w-6 sm:h-7 sm:w-7" /> : <MicOff className="h-6 w-6 sm:h-7 sm:w-7" />}
+          {!isMuted ? <Mic className="h-6 w-6 sm:h-7 sm:w-7" /> : <MicOff className="h-6 w-6 sm:h-7 sm:w-7" />}
         </button>
 
         <button 
           onClick={toggleVideo}
-          className={`grid h-14 w-14 sm:h-16 sm:w-16 place-items-center rounded-full transition-all active:scale-90 shadow-xl ${!isCameraEnabled ? 'bg-white text-[#0B141A]' : 'bg-[#1E2A32] text-white hover:bg-[#2A3942]'}`}
+          className={`grid h-14 w-14 sm:h-16 sm:w-16 place-items-center rounded-full transition-all active:scale-90 shadow-xl ${isVideoOff ? 'bg-white text-[#0B141A]' : 'bg-[#1E2A32] text-white hover:bg-[#2A3942]'}`}
         >
-          {isCameraEnabled ? <Video className="h-6 w-6 sm:h-7 sm:w-7" /> : <VideoOff className="h-6 w-6 sm:h-7 sm:w-7" />}
+          {!isVideoOff ? <Video className="h-6 w-6 sm:h-7 sm:w-7" /> : <VideoOff className="h-6 w-6 sm:h-7 sm:w-7" />}
         </button>
         
         <button 

@@ -699,7 +699,7 @@ export function useChat(currentUser, chatIdFromRoute) {
         setStorageError(null);
         await refreshContacts();
         if (result.group?.id) {
-          setActiveContactId(result.group.id);
+          selectContact(result.group.id);
         }
         return result;
       } catch {

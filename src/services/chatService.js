@@ -161,8 +161,8 @@ function contactFromChat(chat, currentUserId) {
     username: isGroup ? null : (other?.username ?? null),
     avatar: isGroup ? null : (other?.avatar ?? null),
     isGroup,
-    members: isGroup ? chat.participants : undefined,
-    groupRoles: isGroup ? chat.groupRoles : undefined,
+    members: isGroup ? (chat.participants || []).map(p => typeof p === 'object' ? p : { id: p }) : undefined,
+    groupRoles: isGroup ? (chat.groupRoles || {}) : undefined,
     lastMessage: chat.lastMessage ?? null,
     online: other?.isOnline ?? false,
     lastSeen: other?.lastSeenAt ?? null,
@@ -711,6 +711,46 @@ export async function updateMemberRole(chatId, memberId, role) {
 }
 
 export async function getAddableMembersForGroup(userId, groupId) {
+  if (USE_BACKEND) {
+    try {
+      // Fetch all chats to see who we can add
+      const { data } = await api.get("/api/chats");
+      const chats = data?.chats || data?.data?.chats || [];
+      
+      // Find the specific group to get its current participants
+      const targetGroup = chats.find(c => String(c.id ?? c._id) === String(groupId));
+      if (!targetGroup) return [];
+
+      const currentMemberIds = new Set((targetGroup.participants || []).map(p => String(p.id ?? p._id ?? p)));
+
+      // Collect all unique users from other chats who are NOT in this group
+      const candidatesMap = new Map();
+      chats.forEach(chat => {
+        (chat.participants || []).forEach(p => {
+          const pId = String(p.id ?? p._id ?? p);
+          if (pId !== String(userId) && !currentMemberIds.has(pId)) {
+            if (typeof p === 'object' && p.username) {
+              candidatesMap.set(pId, {
+                id: pId,
+                username: p.username,
+                displayName: p.displayName || p.username,
+                avatar: p.avatar
+              });
+            } else if (!candidatesMap.has(pId)) {
+              // If it's just an ID, we might not have the full info here
+              // But batchGetUsers usually populates them in the backend response
+              candidatesMap.set(pId, { id: pId });
+            }
+          }
+        });
+      });
+
+      return Array.from(candidatesMap.values());
+    } catch (err) {
+      console.error("Error fetching addable members:", err);
+      return [];
+    }
+  }
   return [];
 }
 

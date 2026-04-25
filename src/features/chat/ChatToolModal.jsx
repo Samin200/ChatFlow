@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import React from "react";
 import { formatMessageTime, validateImageFile } from "../../utils/helpers.js";
 import ImageCropModal from "./ImageCropModal.jsx";
 import { BUILT_IN_THEMES } from "../../utils/appTheme";
@@ -83,15 +83,18 @@ function GroupInfoBlock({ currentUser, panel, onAddMembersToGroup, onRemoveMembe
   const groupRoles = panel.contact?.groupRoles ?? {};
   
   const myRole = groupRoles[currentUser?.id] || "member";
-  const [openMenuId, setOpenMenuId] = useState(null);
-  const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
+  const [openMenuId, setOpenMenuId] = React.useState(null);
+  const [isAddMenuOpen, setIsAddMenuOpen] = React.useState(false);
 
   // Filter candidates that are not already members
-  const memberIds = new Set(members.map(m => String(m.id || m._id)));
-  const addableUsers = groupAddCandidates.filter(u => !memberIds.has(String(u.id || u._id)));
+  const memberIds = new Set(members.map(m => String(typeof m === "object" ? (m.id || m._id) : m)));
+  const addableUsers = (groupAddCandidates || []).filter(u => {
+    const uId = String(typeof u === "object" ? (u.id || u._id) : u);
+    return !memberIds.has(uId);
+  });
 
   // Close menus when clicking outside (naive approach)
-  useEffect(() => {
+  React.useEffect(() => {
     const handleWindowClick = () => {
       setOpenMenuId(null);
       setIsAddMenuOpen(false);
@@ -155,7 +158,7 @@ function GroupInfoBlock({ currentUser, panel, onAddMembersToGroup, onRemoveMembe
         </div>
         <div className="flex flex-col">
           {members.map(m => {
-            const memberId = m.id || m._id;
+            const memberId = String(typeof m === "object" ? (m.id || m._id) : m);
             const role = groupRoles[memberId] || "member";
             const isMe = memberId === currentUser?.id;
             
@@ -221,9 +224,9 @@ function ThemeBlock({ panel, onChangeTheme }) {
   const defaultBackground = getThemeHex("--color-background", midnight.background);
   const defaultSurface = getThemeHex("--color-surface", midnight.surface);
   const defaultSecondary = getThemeHex("--color-secondary", midnight.secondary);
-  const [pendingBackgroundFile, setPendingBackgroundFile] = useState(null);
-  const [imageError, setImageError] = useState("");
-  const fileInputRef = useRef(null);
+  const [pendingBackgroundFile, setPendingBackgroundFile] = React.useState(null);
+  const [imageError, setImageError] = React.useState("");
+  const fileInputRef = React.useRef(null);
 
   function handleImageUpload(event) {
     const file = event.target.files?.[0];

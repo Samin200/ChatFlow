@@ -20,7 +20,7 @@ export default function OutgoingCallModal({ contact, onEnd }) {
     <div 
       className="fixed inset-0 z-[99999] h-[100dvh] w-[100dvw] overflow-hidden flex flex-col text-white pt-safe pb-safe"
       style={{
-        background: "radial-gradient(120% 60% at 50% 0%, color-mix(in srgb, var(--color-accent) 40%, var(--color-surface)) 0%, var(--color-surface) 50%, var(--color-background) 100%)"
+        background: "radial-gradient(120% 60% at 50% 0%, var(--color-accent) 0%, color-mix(in srgb, var(--color-accent) 70%, black) 55%, var(--color-surface) 100%)"
       }}
     >
       {/* Top Info */}
@@ -68,21 +68,30 @@ export default function OutgoingCallModal({ contact, onEnd }) {
       </div>
 
       {/* Bottom Controls */}
-      <div className="mt-8 mb-8 grid grid-cols-3 gap-6 px-10 place-items-center w-full max-w-md mx-auto z-10 shrink-0">
-        <button className="grid h-16 w-16 place-items-center rounded-full bg-white/10 text-white transition-all hover:bg-white/20 active:scale-90 shadow-lg">
-          <Mic className="h-7 w-7" />
-        </button>
+      <div className="mt-8 mb-10 flex items-center justify-center gap-10 w-full max-w-md mx-auto z-10 shrink-0">
+        <div className="flex flex-col items-center gap-2">
+          <button className="grid h-16 w-16 place-items-center rounded-full bg-white/10 text-white transition-all hover:bg-white/20 active:scale-95 shadow-xl">
+            <MicOff className="h-7 w-7" />
+          </button>
+          <span className="text-[10px] uppercase tracking-widest font-bold opacity-60">Mute</span>
+        </div>
         
-        <button className="grid h-16 w-16 place-items-center rounded-full bg-white/10 text-white transition-all hover:bg-white/20 active:scale-90 shadow-lg">
-          <Volume2 className="h-7 w-7" />
-        </button>
-        
-        <button 
-          onClick={onEnd} 
-          className="grid h-16 w-16 place-items-center rounded-full bg-[#FF4B4B] text-white transition-all hover:bg-red-400 active:scale-90 shadow-[0_0_20px_rgba(255,75,75,0.4)]"
-        >
-          <PhoneOff className="h-8 w-8" />
-        </button>
+        <div className="flex flex-col items-center gap-2">
+          <button 
+            onClick={onEnd} 
+            className="grid h-20 w-20 place-items-center rounded-full bg-[#FF4B4B] text-white transition-all hover:bg-rose-600 active:scale-95 shadow-[0_0_30px_rgba(255,75,75,0.4)]"
+          >
+            <PhoneOff className="h-10 w-10" />
+          </button>
+          <span className="text-[10px] uppercase tracking-widest font-bold opacity-60">End</span>
+        </div>
+
+        <div className="flex flex-col items-center gap-2">
+          <button className="grid h-16 w-16 place-items-center rounded-full bg-white/10 text-white transition-all hover:bg-white/20 active:scale-95 shadow-xl">
+            <Volume2 className="h-7 w-7" />
+          </button>
+          <span className="text-[10px] uppercase tracking-widest font-bold opacity-60">Speaker</span>
+        </div>
       </div>
     </div>
   );
