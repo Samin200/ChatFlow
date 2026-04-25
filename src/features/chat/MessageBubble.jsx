@@ -932,7 +932,7 @@ const MessageBubble = memo(function MessageBubble({
                       {(isHovered || showHoverMenu) && !message.deleted && (
                         <button
                           onClick={handleChevronClick}
-                          className="flex items-center justify-center transition-all"
+                          className="flex items-center justify-center transition-all shrink-0"
                           style={{
                             width: 14,
                             height: 14,
@@ -988,7 +988,7 @@ const MessageBubble = memo(function MessageBubble({
                     {(isHovered || showHoverMenu) && !message.deleted && (
                       <button
                         onClick={handleChevronClick}
-                        className="flex items-center justify-center transition-all"
+                        className="flex items-center justify-center transition-all shrink-0"
                         style={{
                           width: 14,
                           height: 14,
