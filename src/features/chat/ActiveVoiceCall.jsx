@@ -1,57 +1,70 @@
+import React from 'react';
+import { createPortal } from 'react-dom';
 import { LiveKitRoom, RoomAudioRenderer, useLocalParticipant } from '@livekit/components-react';
 import { useState, useEffect } from 'react';
 import { PhoneOff, Mic, MicOff, Volume2, User } from 'lucide-react';
 import '@livekit/components-styles';
 
+/**
+ * ActiveVoiceCall - 2026 WhatsApp Replica
+ * Renders via React Portal directly to document.body for true fullscreen overlay.
+ */
 export default function ActiveVoiceCall({ token, serverUrl, roomName, contact, state, onEnd }) {
-  if (!token || !serverUrl) {
-    const statusText = state === 'ringing' ? 'Incoming call...' : 'Calling...';
-    
-    return (
-      <div className="fixed inset-0 z-[99999] bg-gradient-to-br from-[#0a0a0a] via-[#1a1a2e] to-[#16213e] flex flex-col items-center justify-between p-8 pt-safe pb-safe text-white animate-in fade-in duration-500">
-        <div className="flex flex-col items-center mt-12">
-          <div className="relative mb-8">
-            <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ring-pulse ring-4 ring-emerald-500/30" />
-            <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-slate-900 shadow-2xl">
-              {contact?.avatar ? (
-                <img src={contact.avatar} className="w-full h-full object-cover" alt={contact.displayName} />
-              ) : (
-                <div className="w-full h-full bg-slate-800 flex items-center justify-center text-4xl">
-                  {contact?.displayName?.charAt(0) || <User size={48} />}
-                </div>
-              )}
+  const [content, setContent] = useState(null);
+
+  useEffect(() => {
+    if (!token || !serverUrl) {
+      const statusText = state === 'ringing' ? 'Incoming call...' : 'Calling...';
+      
+      setContent(
+        <div className="fixed inset-0 z-[99999] h-[100dvh] w-[100dvw] bg-gradient-to-br from-[#0a0a0a] via-[#1a1a2e] to-[#16213e] flex flex-col items-center justify-between p-8 pt-safe pb-safe text-white animate-in fade-in duration-500 overflow-hidden pointer-events-auto">
+          <div className="flex flex-col items-center mt-12 z-10">
+            <div className="relative mb-8">
+              <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ring-pulse ring-4 ring-emerald-500/30" />
+              <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-slate-900 shadow-2xl">
+                {contact?.avatar ? (
+                  <img src={contact.avatar} className="w-full h-full object-cover" alt={contact.displayName} />
+                ) : (
+                  <div className="w-full h-full bg-slate-800 flex items-center justify-center text-4xl">
+                    {contact?.displayName?.charAt(0) || <User size={48} />}
+                  </div>
+                )}
+              </div>
             </div>
+            <h2 className="text-3xl font-bold mb-2 tracking-tight">{contact?.displayName || 'Unknown'}</h2>
+            <p className="text-emerald-400 font-medium animate-pulse tracking-widest uppercase text-xs">{statusText}</p>
           </div>
-          <h2 className="text-3xl font-bold mb-2 tracking-tight">{contact?.displayName || 'Unknown'}</h2>
-          <p className="text-emerald-400 font-medium animate-pulse tracking-widest uppercase text-xs">{statusText}</p>
-        </div>
 
-        <div className="pb-24">
-          <button 
-            onClick={onEnd}
-            className="w-20 h-20 rounded-full bg-red-600 hover:bg-red-500 text-white flex items-center justify-center shadow-2xl shadow-red-900/40 transition-all hover:scale-110 active:scale-90"
-          >
-            <PhoneOff size={32} />
-          </button>
+          <div className="pb-24">
+            <button 
+              onClick={onEnd}
+              className="w-20 h-20 rounded-full bg-red-600 hover:bg-red-500 text-white flex items-center justify-center shadow-2xl shadow-red-900/40 transition-all hover:scale-110 active:scale-90"
+            >
+              <PhoneOff size={32} />
+            </button>
+          </div>
         </div>
-      </div>
-    );
-  }
+      );
+    } else {
+      setContent(
+        <LiveKitRoom
+          token={token}
+          serverUrl={serverUrl}
+          connect={true}
+          audio={true}
+          video={false}
+          onDisconnected={onEnd}
+          className="fixed inset-0 z-[99999] h-[100dvh] w-[100dvw] bg-gradient-to-br from-[#0a0a0a] via-[#1a1a2e] to-[#16213e] overflow-hidden pointer-events-auto"
+        >
+          <CallUI contact={contact} onEnd={onEnd} />
+          <RoomAudioRenderer />
+        </LiveKitRoom>
+      );
+    }
+  }, [token, serverUrl, contact, state, onEnd]);
 
-  return (
-    <LiveKitRoom
-      token={token}
-      serverUrl={serverUrl}
-      connect={true}
-      audio={true}
-      video={false}
-      onDisconnected={onEnd}
-      className="fixed inset-0 z-[99999] bg-gradient-to-br from-[#0a0a0a] via-[#1a1a2e] to-[#16213e]"
-    >
-      <CallUI contact={contact} onEnd={onEnd} />
-      <RoomAudioRenderer />
-    </LiveKitRoom>
-  );
+  if (!content) return null;
+  return createPortal(content, document.body);
 }
 
 function CallUI({ contact, onEnd }) {
@@ -78,7 +91,7 @@ function CallUI({ contact, onEnd }) {
   };
 
   return (
-    <div className="flex flex-col h-full text-white pt-safe pb-safe relative overflow-hidden">
+    <div className="flex flex-col h-full w-full text-white pt-safe pb-safe relative overflow-hidden">
       {/* Background Decor */}
       <div className="absolute inset-0 pointer-events-none opacity-30">
         <div className="absolute -top-24 -right-24 w-96 h-96 bg-emerald-500/10 rounded-full blur-[100px]" />

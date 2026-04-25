@@ -1,17 +1,23 @@
+import React from 'react';
+import { createPortal } from 'react-dom';
 import { Phone, PhoneOff, User } from 'lucide-react';
 
+/**
+ * IncomingCallModal - 2026 WhatsApp Replica
+ * Renders via React Portal directly to document.body for true fullscreen overlay.
+ */
 export default function IncomingCallModal({ incoming, onAccept, onReject }) {
   if (!incoming) return null;
 
-  return (
-    <div className="fixed inset-0 z-[99999] flex flex-col items-center justify-between p-8 bg-gradient-to-br from-[#0a0a0a] via-[#1a1a2e] to-[#16213e] backdrop-blur-md overflow-hidden animate-in fade-in duration-500">
+  const content = (
+    <div className="fixed inset-0 z-[99999] h-[100dvh] w-[100dvw] flex flex-col items-center justify-between p-8 bg-gradient-to-br from-[#0a0a0a] via-[#1a1a2e] to-[#16213e] backdrop-blur-md overflow-hidden animate-in fade-in duration-500 pointer-events-auto">
       {/* Background Ambient Effect */}
       <div className="absolute inset-0 pointer-events-none opacity-50">
         <div className="absolute top-0 left-0 w-full h-full bg-black/20" />
       </div>
 
       {/* Top: Avatar + Status */}
-      <div className="relative safe-top flex flex-col items-center mt-12 w-full max-w-lg">
+      <div className="relative pt-safe flex flex-col items-center mt-12 w-full max-w-lg z-10">
         <div className="relative mb-8">
           {/* Pulsing Ring */}
           <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ring-pulse ring-4 ring-emerald-500/30" />
@@ -43,7 +49,7 @@ export default function IncomingCallModal({ incoming, onAccept, onReject }) {
       </div>
 
       {/* Bottom: Controls */}
-      <div className="relative w-full max-w-md safe-bottom flex justify-around items-center mb-12">
+      <div className="relative w-full max-w-md pb-safe flex justify-around items-center mb-12">
         <div className="flex flex-col items-center gap-3">
           <button 
             onClick={() => onReject(incoming)}
@@ -66,4 +72,6 @@ export default function IncomingCallModal({ incoming, onAccept, onReject }) {
       </div>
     </div>
   );
+
+  return createPortal(content, document.body);
 }

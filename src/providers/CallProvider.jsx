@@ -21,11 +21,14 @@ export function CallProvider({ children }) {
   return (
     <CallContext.Provider value={voiceCall}>
       {children}
+      
+      {/* Global Call UI - Now handles Portals internally */}
       <IncomingCallModal 
         incoming={voiceCall.incomingCall} 
         onAccept={voiceCall.acceptCall} 
         onReject={voiceCall.rejectCall} 
       />
+
       {voiceCall.callState !== 'idle' && (
         <ActiveVoiceCall 
           {...voiceCall.activeCall} 
