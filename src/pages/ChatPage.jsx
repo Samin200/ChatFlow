@@ -1,13 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import ChatLayout from "../features/chat/ChatLayout.jsx";
 import { useChat } from "../hooks/useChat.js";
 import AdminPage from "./AdminPage.jsx";
 import { useAuth } from "../hooks/useAuth.js";
-import { useVoiceCall } from "../hooks/useVoiceCall.js";
-import ActiveVoiceCall from "../features/chat/ActiveVoiceCall.jsx";
-import IncomingCallModal from "../features/chat/IncomingCallModal.jsx";
-import { useCallback } from "react";
+import { useCallContext } from "../providers/CallProvider.jsx";
 
 export default function ChatPage() {
   const { chatId } = useParams();
@@ -80,7 +77,7 @@ export default function ChatPage() {
     });
   }, [handleSendMessage]);
 
-  const voiceCall = useVoiceCall(currentUser);
+  const voiceCall = useCallContext();
 
   // When a contact is selected, navigate to the URL
   function onSelectContact(id) {
@@ -117,18 +114,6 @@ export default function ChatPage() {
       className="h-[100dvh] min-h-0 w-full overflow-hidden relative"
       style={{ backgroundColor: "var(--color-background)", color: "var(--color-text)" }}
     >
-      <IncomingCallModal 
-        incoming={voiceCall.incomingCall} 
-        onAccept={voiceCall.acceptCall} 
-        onReject={voiceCall.rejectCall} 
-      />
-      {voiceCall.callState !== 'idle' && (
-        <ActiveVoiceCall 
-          {...voiceCall.activeCall} 
-          state={voiceCall.callState} 
-          onEnd={voiceCall.endCall} 
-        />
-      )}
       <ChatLayout
         currentUser={currentUser}
         chatSections={chatSections}
