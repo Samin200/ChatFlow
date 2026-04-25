@@ -1,9 +1,10 @@
 /**
  * useAuth.js
  * Manages authentication state for the current user session.
+ * Exports AuthProvider for global state management.
  */
 
-import { useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { generateId } from "../utils/helpers.js";
 import { registerPushNotifications } from "../services/notificationService.js";
 import {
@@ -14,9 +15,10 @@ import {
   persistSession,
   updateProfile,
 } from "../services/authService.js";
-import { getAuthUser, setAuthUser } from "../services/storageService.js";
 
-export function useAuth() {
+const AuthContext = createContext(null);
+
+export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -70,7 +72,6 @@ export function useAuth() {
         setError(result.error);
         return result;
       }
-      // Don't set user yet — onboarding comes first
       return result;
     } catch (err) {
       const msg = err?.message || "Signup failed.";
@@ -136,7 +137,7 @@ export function useAuth() {
     return result;
   }, [user]);
 
-  return {
+  const value = {
     user,
     loading,
     error,
@@ -150,4 +151,14 @@ export function useAuth() {
     updateUser,
     finalizeUser,
   };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
 }

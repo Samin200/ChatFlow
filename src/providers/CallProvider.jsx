@@ -21,19 +21,22 @@ export function CallProvider({ children }) {
   return (
     <CallContext.Provider value={voiceCall}>
       {children}
-      
-      {/* Global Call UI - Now handles Portals internally */}
-      <IncomingCallModal 
-        incoming={voiceCall.incomingCall} 
-        onAccept={voiceCall.acceptCall} 
-        onReject={voiceCall.rejectCall} 
-      />
 
-      {voiceCall.callState !== 'idle' && (
-        <ActiveVoiceCall 
-          {...voiceCall.activeCall} 
-          state={voiceCall.callState} 
-          onEnd={voiceCall.endCall} 
+      {/* Only ONE global instance of call UI */}
+      {voiceCall.incomingCall && (
+        <IncomingCallModal
+          incoming={voiceCall.incomingCall}
+          onAccept={voiceCall.acceptCall}
+          onReject={voiceCall.rejectCall}
+        />
+      )}
+
+      {voiceCall.activeCall && voiceCall.callState === 'connected' && (
+        <ActiveVoiceCall
+          token={voiceCall.activeCall.token}
+          serverUrl={voiceCall.activeCall.serverUrl}
+          contact={voiceCall.activeCall.contact}
+          onEnd={voiceCall.endCall}
         />
       )}
     </CallContext.Provider>
