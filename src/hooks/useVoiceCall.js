@@ -23,7 +23,9 @@ export function useVoiceCall(currentUser) {
         body: JSON.stringify({ roomName, identity })
       });
       const data = await response.json();
-      return data.data; // token, serverUrl, roomName
+      // The backend returns { success: true, serverUrl: '...', token: '...', roomName: '...' }
+      if (!data.token) return null;
+      return data; // token, serverUrl, roomName
     } catch (error) {
       console.error('Failed to fetch LiveKit token:', error);
       return null;
