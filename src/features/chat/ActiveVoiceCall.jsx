@@ -14,7 +14,10 @@ export default function ActiveVoiceCall({ token, serverUrl, contact, onEnd }) {
       audio={true}
       video={false}
       onDisconnected={onEnd}
-      className="fixed inset-0 z-[99999] h-[100dvh] w-[100dvw] bg-gradient-to-br from-[#0a0a0a] via-[#1a1a2e] to-[#16213e] overflow-hidden"
+      className="fixed inset-0 z-[99999] h-[100dvh] w-[100dvw] overflow-hidden"
+      style={{
+        background: "radial-gradient(120% 60% at 50% 0%, #128C7E 0%, #075E54 55%, #0B141A 100%)"
+      }}
     >
       <CallUI contact={contact} onEnd={onEnd} />
       <RoomAudioRenderer />
@@ -48,59 +51,68 @@ function CallUI({ contact, onEnd }) {
   };
 
   return (
-    <div className="flex flex-col h-full text-white pt-safe pb-safe relative">
+    <div className="relative flex h-full w-full flex-col text-white pt-safe pb-safe">
+      
       {/* Top Info */}
-      <div className="pt-12 flex flex-col items-center">
-        <div className="relative w-28 h-28 rounded-full overflow-hidden border-4 border-white/20 mb-6">
-          {contact?.avatar ? (
-            <img src={contact.avatar} className="w-full h-full object-cover" alt="" />
-          ) : (
-            <div className="w-full h-full bg-slate-700 flex items-center justify-center text-5xl">
-              {contact?.displayName?.[0] || <User size={48} />}
-            </div>
-          )}
-        </div>
-
-        <h2 className="text-2xl font-bold">{contact?.displayName || 'Unknown'}</h2>
-        <p className="text-4xl font-mono tabular-nums mt-6 text-emerald-400">
-          {formatTime(duration)}
-        </p>
+      <div className="px-6 pt-10 text-center z-10">
+        <p className="text-xs uppercase tracking-[0.28em] text-white/60 font-medium">ChatFlow voice</p>
+        <p className="mt-3 text-3xl font-semibold tracking-[-0.03em] drop-shadow-md">{contact?.displayName || 'Unknown'}</p>
+        <p className="mt-2 text-xs text-white/60 font-medium">end-to-end encrypted · LiveKit</p>
       </div>
 
-      {/* Center Animation */}
-      <div className="flex-1 flex items-center justify-center">
-        <div className="relative">
-          <div className="w-64 h-64 bg-emerald-500/10 rounded-full animate-ping" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-40 h-40 bg-white/5 backdrop-blur-3xl rounded-full flex items-center justify-center border border-white/10">
-              <svg className="w-20 h-20 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
-              </svg>
-            </div>
+      {/* Center Avatar & Ping */}
+      <div className="relative flex-1 flex flex-col items-center justify-center z-10">
+        <div className="relative grid h-48 w-48 place-items-center">
+          <span className="absolute h-48 w-48 animate-ping rounded-full bg-white/10 duration-1000" />
+          <span className="absolute h-36 w-36 animate-pulse rounded-full bg-white/15 duration-700" />
+          
+          <div className="relative h-36 w-36 overflow-hidden rounded-full shadow-2xl ring-4 ring-black/10">
+            {contact?.avatar ? (
+              <img src={contact.avatar} className="w-full h-full object-cover" alt="" />
+            ) : (
+              <div className="grid h-full w-full place-items-center bg-gradient-to-br from-[#25D366] to-[#128C7E] text-5xl font-semibold text-white">
+                {contact?.displayName?.[0] || <User size={56} />}
+              </div>
+            )}
           </div>
+        </div>
+      </div>
+
+      {/* Waveform & Timer */}
+      <div className="mt-auto px-6 z-10">
+        <p className="text-center text-sm font-medium text-white/70 tracking-widest tabular-nums">{formatTime(duration)}</p>
+        <div className="mt-4 flex items-end justify-center gap-1.5 h-12">
+          {[14, 28, 16, 36, 18, 42, 24, 32, 14, 22].map((h, i) => (
+            <span
+              key={i}
+              className="w-1.5 rounded-full bg-[#25D366] animate-pulse shadow-[0_0_8px_rgba(37,211,102,0.6)]"
+              style={{ height: h, animationDelay: `${i * 150}ms` }}
+            />
+          ))}
         </div>
       </div>
 
       {/* Bottom Controls */}
-      <div className="flex justify-center gap-12 pb-12">
-        <button onClick={toggleMute} className="flex flex-col items-center gap-1.5">
-          <div className={`w-14 h-14 rounded-full flex items-center justify-center ${isMuted ? 'bg-white text-black' : 'bg-white/10'}`}>
-            {isMuted ? <MicOff size={26} /> : <Mic size={26} />}
-          </div>
-          <span className="text-xs text-white/50">Mute</span>
+      <div className="mt-8 mb-8 grid grid-cols-3 gap-6 px-10 place-items-center w-full max-w-md mx-auto z-10">
+        <button 
+          onClick={toggleMute} 
+          className={`grid h-16 w-16 place-items-center rounded-full transition-all active:scale-90 shadow-lg ${isMuted ? 'bg-white text-[#075E54]' : 'bg-white/10 text-white hover:bg-white/20'}`}
+        >
+          {isMuted ? <MicOff className="h-7 w-7" /> : <Mic className="h-7 w-7" />}
         </button>
-
-        <button onClick={onEnd} className="w-20 h-20 bg-red-500 rounded-full flex items-center justify-center active:scale-90 transition-transform">
-          <PhoneOff size={32} />
+        
+        <button className="grid h-16 w-16 place-items-center rounded-full bg-white/10 text-white transition-all hover:bg-white/20 active:scale-90 shadow-lg">
+          <Volume2 className="h-7 w-7" />
         </button>
-
-        <button className="flex flex-col items-center gap-1.5">
-          <div className="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center">
-            <Volume2 size={26} />
-          </div>
-          <span className="text-xs text-white/50">Speaker</span>
+        
+        <button 
+          onClick={onEnd} 
+          className="grid h-16 w-16 place-items-center rounded-full bg-[#FF4B4B] text-white transition-all hover:bg-red-400 active:scale-90 shadow-[0_0_20px_rgba(255,75,75,0.4)]"
+        >
+          <PhoneOff className="h-8 w-8" />
         </button>
       </div>
+
     </div>
   );
 }
