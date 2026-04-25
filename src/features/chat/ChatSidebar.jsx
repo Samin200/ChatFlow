@@ -44,7 +44,20 @@ export default function ChatSidebar({
       ...(chatSections?.regular ?? []),
       ...(chatSections?.archived ?? []),
     ];
-    return merged.filter((contact) => !contact.isGroup);
+    // Filter out groups and ensure we have unique user objects with the correct ID
+    const userContacts = merged.filter((c) => !c.isGroup && c.otherUserId);
+    const seen = new Set();
+    const unique = [];
+    for (const c of userContacts) {
+      if (!seen.has(c.otherUserId)) {
+        seen.add(c.otherUserId);
+        unique.push({
+          ...c,
+          id: c.otherUserId, // Use the actual USER ID for selection
+        });
+      }
+    }
+    return unique;
   }, [chatSections]);
 
   const sidebarMenuItems = [
