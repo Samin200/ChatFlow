@@ -63,7 +63,7 @@ const SWIPE_REACTION_PAGES = [
 ];
 
 // ─── Helper: compute menu position from an anchor rect ─────────────────────
-function computeMenuPosition({ rect, isRightSide, debugOffset }) {
+function computeMenuPosition({ rect, isRightSide }) {
   const MARGIN = 12;
   const MENU_WIDTH = 224;
   const ESTIMATED_HEIGHT = 320;
@@ -75,19 +75,13 @@ function computeMenuPosition({ rect, isRightSide, debugOffset }) {
   return {
     openUpward,
     position: {
-      top: openUpward
-        ? undefined
-        : rect.bottom + 4 + (debugOffset?.y ?? 0),
-      bottom: openUpward
-        ? window.innerHeight - rect.top + 4 - (debugOffset?.y ?? 0)
-        : undefined,
+      top: openUpward ? undefined : rect.bottom + 4,
+      bottom: openUpward ? window.innerHeight - rect.top + 4 : undefined,
       left: isRightSide
         ? undefined
-        : Math.min(rect.left, window.innerWidth - MENU_WIDTH - MARGIN) +
-          (debugOffset?.x ?? 0),
+        : Math.min(rect.left, window.innerWidth - MENU_WIDTH - MARGIN),
       right: isRightSide
-        ? Math.max(MARGIN, window.innerWidth - rect.right) -
-          (debugOffset?.x ?? 0)
+        ? Math.max(MARGIN, window.innerWidth - rect.right)
         : undefined,
     },
   };
@@ -153,12 +147,6 @@ const MessageBubble = memo(function MessageBubble({
   const reactionPanelRef = useRef(null);
   const longPressRef = useRef(null);
   const voiceTimerRef = useRef(null);
-
-  // Store the chevron button rect so arrow keys can recompute from same anchor
-  const chevronRectRef = useRef(null);
-  // Debug pixel offset — kept as a ref so it accumulates across key presses,
-  // but we immediately apply it to state via setMenuPosition.
-  const debugOffset = useRef({ x: 0, y: 0 });
 
   // ─── Device detection ────────────────────────────────────────────────────
   useEffect(() => {
@@ -333,49 +321,6 @@ const MessageBubble = memo(function MessageBubble({
     };
   }, [message.id]);
 
-  // ─── Arrow-key debug repositioning — FIXED ──────────────────────────────
-  // The old code called setShowHoverMenu(false) + setShowHoverMenu(true) in
-  // the same synchronous frame, which React batches so nothing closed/opened.
-  // It also relied on the closed-over `showHoverMenu` state value inside the
-  // effect, which became stale. Fix: use a ref to track visibility, and
-  // directly recompute + set the new position in state instead of toggling.
-  const showHoverMenuRef = useRef(false);
-  useEffect(() => {
-    showHoverMenuRef.current = showHoverMenu;
-  }, [showHoverMenu]);
-
-  const isRightSideRef = useRef(false); // kept in sync below
-
-  useEffect(() => {
-    function onKey(e) {
-      if (!showHoverMenuRef.current) return;
-      if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key))
-        return;
-
-      e.preventDefault(); // stop page scroll while menu is open
-
-      if (e.key === "ArrowUp") debugOffset.current.y -= 5;
-      else if (e.key === "ArrowDown") debugOffset.current.y += 5;
-      else if (e.key === "ArrowLeft") debugOffset.current.x -= 5;
-      else if (e.key === "ArrowRight") debugOffset.current.x += 5;
-
-      // Recompute from the stored anchor rect + new offset
-      if (chevronRectRef.current) {
-        const { openUpward, position } = computeMenuPosition({
-          rect: chevronRectRef.current,
-          isRightSide: isRightSideRef.current,
-          debugOffset: debugOffset.current,
-        });
-        setOpensUpward(openUpward);
-        setMenuPosition(position); // ← state update → re-render with new coords
-      }
-    }
-
-    window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
-  }, []); // empty deps — effect runs once; refs give live values
-  // ─────────────────────────────────────────────────────────────────────────
-
   // ─── Layout helpers ──────────────────────────────────────────────────────
   const avatarColor = getAvatarColor(sender?.id);
   const canInlineMeta = !message.deleted && message.type === "text";
@@ -405,8 +350,6 @@ const MessageBubble = memo(function MessageBubble({
 
   const messageSide = isMine ? mineSide : theirSide;
   const isRightSide = messageSide === "right";
-  // Keep ref in sync for arrow-key handler
-  isRightSideRef.current = isRightSide;
 
   const rowJustifyClass = isRightSide ? "justify-end" : "justify-start";
   const bubbleAlignClass = isRightSide ? "items-end" : "items-start";
@@ -449,15 +392,10 @@ const MessageBubble = memo(function MessageBubble({
     );
 
     const rect = e.currentTarget.getBoundingClientRect();
-    // Store the anchor rect so arrow-key handler can recompute from it
-    chevronRectRef.current = rect;
-    // Reset debug offset whenever we (re-)open the menu
-    debugOffset.current = { x: 0, y: 0 };
 
     const { openUpward, position } = computeMenuPosition({
       rect,
       isRightSide,
-      debugOffset: debugOffset.current,
     });
 
     setMenuPosition(position);

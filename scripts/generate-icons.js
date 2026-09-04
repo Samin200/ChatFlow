@@ -1,0 +1,36 @@
+import sharp from "sharp";
+import { writeFileSync } from "fs";
+import { resolve, dirname } from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const outDir = resolve(__dirname, "../public");
+
+const sizes = [192, 512];
+
+async function generate() {
+  const svg = `<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#8b5cf6"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="100" fill="url(#bg)"/>
+  <text x="256" y="320" text-anchor="middle" font-size="320" font-weight="bold" font-family="system-ui, sans-serif" fill="white">CF</text>
+</svg>`;
+
+  for (const size of sizes) {
+    await sharp(Buffer.from(svg))
+      .resize(size, size)
+      .png()
+      .toFile(resolve(outDir, `icon-${size}x${size}.png`));
+    console.log(`Created icon-${size}x${size}.png`);
+  }
+
+  // Also save the SVG
+  writeFileSync(resolve(outDir, "icon.svg"), svg);
+  console.log("Created icon.svg");
+}
+
+generate().catch(console.error);
