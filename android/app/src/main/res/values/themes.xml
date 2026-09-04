@@ -5,4 +5,11 @@
         <item name="android:navigationBarColor">#0f172a</item>
         <item name="android:windowLightStatusBar">false</item>
     </style>
+
+    <style name="Theme.ChatFlow.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#0f172a</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="windowSplashScreenAnimationDuration">400</item>
+        <item name="postSplashScreenTheme">@style/Theme.ChatFlow</item>
+    </style>
 </resources>

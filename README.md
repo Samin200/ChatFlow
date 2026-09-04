@@ -44,6 +44,16 @@ No Android Studio needed locally. The `android/` folder is a WebView wrapper aro
 2. Open the run under the repo's **Actions** tab.
 3. Download the **ChatFlow-APK** artifact and install it on your device (debug build — allow "Install unknown apps").
 
+## Push notifications (FCM)
+
+The app can receive push notifications, but needs a one-time Firebase setup:
+
+1. **Firebase console** (console.firebase.google.com): create a project, add an Android app with package name `com.chatflow.app`, download `google-services.json`.
+2. **Give it to builds**: either commit the file at `android/app/google-services.json`, or add a `GOOGLE_SERVICES_JSON` repo secret containing the base64 of the file (the workflow decodes it automatically). Without one of these the APK build fails by design.
+3. **Backend**: when a message arrives, also send FCM (Admin SDK) to the recipient's device token. The web app can read the token via `window.ChatFlowNative?.getPushToken()` and register it with your backend. `areNotificationsEnabled()` and `openNotificationSettings()` are exposed the same way.
+
+Notifications only arrive when your backend actually sends them — the app side alone shows nothing.
+
 ## PWA icons
 
 Regenerate icons from SVG source with:
